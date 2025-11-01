@@ -1,13 +1,6 @@
-// src/data/mockTasks.ts
+import type { Task } from "../types";
 
-export interface Task {
-  id: string;
-  desc: string;
-  assignmentGroup: string;
-  assignedTo: string;
-  openedAt: string;
-}
-
+// ✅ Categories for sidebar or navigation
 export const categories = [
   {
     id: "shared",
@@ -21,7 +14,7 @@ export const categories = [
   {
     id: "individual",
     title: "Individual Category",
-    count: 40,
+    count: 4,
     children: [
       {
         id: "furniture",
@@ -61,43 +54,75 @@ export const categories = [
   },
 ];
 
-// ✅ Detailed mock task data used by TaskCategoryPage
+// ✅ Detailed mock task data
 export const taskCategoryMap: Record<string, Task[]> = {
   "ceiling-fan": [
     {
       id: "TASK10001",
       desc: "Fan malfunction",
+      category: "Private",
+      subcategory: "Fan",
+      matricNo: "123456",
+      hpNo: "01X-XXXXXXX",
+      location: "M01/XX-XXA",
+      date: "2025-10-26",
       assignmentGroup: "INDUK-RESTU",
       assignedTo: "Kevin Goh",
-      openedAt: "2025-10-25 09:12:22",
+      openedAt: "2025-10-26 03:55:40",
+      openedBy: "Student 1",
+      status: "In Progress",
     },
     {
       id: "TASK10002",
       desc: "Humming sound from the motor",
+      category: "Private",
+      subcategory: "Fan",
+      matricNo: "123457",
+      hpNo: "01X-XXXXXXX",
+      location: "M02/YY-YYB",
+      date: "2025-10-25",
       assignmentGroup: "INDUK-RESTU",
       assignedTo: "Alicia Lee",
       openedAt: "2025-10-25 12:40:00",
+      openedBy: "Student 2",
+      status: "Pending",
     },
   ],
   furniture: [
     {
       id: "TASK10003",
       desc: "Table leg broken",
+      category: "Private",
+      subcategory: "Furniture",
+      matricNo: "123458",
+      hpNo: "01X-XXXXXXX",
+      location: "M03/AA-XXB",
+      date: "2025-10-26",
       assignmentGroup: "INDUK-TEKUN",
       assignedTo: "Kevin Goh",
       openedAt: "2025-10-26 03:55:40",
+      openedBy: "Student 3",
+      status: "Completed",
     },
     {
       id: "TASK10004",
       desc: "Wardrobe hinge loose",
+      category: "Private",
+      subcategory: "Furniture",
+      matricNo: "123459",
+      hpNo: "01X-XXXXXXX",
+      location: "M04/CC-XXC",
+      date: "2025-10-26",
       assignmentGroup: "INDUK-IK",
       assignedTo: "Sara Ng",
       openedAt: "2025-10-26 10:24:15",
+      openedBy: "Student 4",
+      status: "In Progress",
     },
   ],
 };
 
-// ✅ Dropdown options for editable fields
+// ✅ Dropdown options
 export const groupOptions = [
   "INDUK-RESTU",
   "INDUK-TEKUN",

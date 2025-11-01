@@ -30,9 +30,9 @@ export default function TaskCategoryPage() {
         <h1 className="text-2xl font-bold text-purple-700 mb-1 capitalize">
           {formattedCategory} Tasks
         </h1>
-        <p className="text-gray-600 text-sm">
+        {/* <p className="text-gray-600 text-sm">
           Review and manage complaints related to {formattedCategory}.
-        </p>
+        </p> */}
       </div>
 
       {/* Table Section */}
