@@ -81,14 +81,14 @@ export default function Sidebar() {
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
                   ${
                     isActive
-                      ? "bg-blue-200/60 text-blue-700 font-semibold shadow-inner"
-                      : "hover:bg-blue-100/40 hover:text-blue-600 text-gray-700"
+                      ? "bg-purple-200/60 text-purple-700 font-semibold shadow-inner"
+                      : "hover:bg-purple-100/40 hover:text-purple-600 text-gray-700"
                   }`}
               >
                 <Icon
                   size={22}
                   className={`${
-                    isActive ? "text-blue-700" : "text-blue-600"
+                    isActive ? "text-purple-700" : "text-purple-600"
                   } transition-colors`}
                 />
                 {isOpen && <span className="text-sm">{name}</span>}
