@@ -351,8 +351,8 @@ export default function DashboardPage() {
           <table className="min-w-full border border-gray-200 rounded-lg text-left text-xs">
             <thead>
               <tr className="bg-purple-100">
-                <th className="p-2 text-sm font-medium">Facility</th>
                 <th className="p-2 text-sm font-medium">Complaint ID</th>
+                <th className="p-2 text-sm font-medium">Facility</th>
                 <th className="p-2 text-sm font-medium">Assigned To</th>
                 <th className="p-2 text-sm font-medium">Rating</th>
                 <th className="p-2 text-sm font-medium">Comment</th>
