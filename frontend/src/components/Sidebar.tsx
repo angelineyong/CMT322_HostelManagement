@@ -90,8 +90,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         <div className="flex-1 px-4 py-2 space-y-2 overflow-y-auto">
           {menuItems.map(({ name, icon: Icon, path }) => {
             const isActive =
-              path === "/staff/"
-                ? location.pathname === "/staff/" // only exact match for Overview
+              path === "/staff/" || path === "/student/"
+                ? location.pathname === path
                 : location.pathname.startsWith(path);
 
             return (
