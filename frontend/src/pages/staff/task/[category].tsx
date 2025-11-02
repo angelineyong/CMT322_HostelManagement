@@ -36,7 +36,7 @@ export default function TaskCategoryPage() {
       </div>
 
       {/* Table Section */}
-      <div className="bg-white/70 backdrop-blur-md rounded-xl border border-gray-200 shadow p-4">
+      <div className="bg-white/70 backdrop-blur-md rounded-xl border border-gray-200 shadow p-4 overflow-x-auto">
         <table className="min-w-full text-sm text-gray-700">
           <thead>
             <tr className="bg-purple-50 border-b text-left text-gray-800">
