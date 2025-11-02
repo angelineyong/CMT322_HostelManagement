@@ -60,7 +60,7 @@ export const taskCategoryMap: Record<string, Task[]> = {
     {
       id: "TASK10001",
       desc: "Fan malfunction",
-      category: "Private",
+      category: "Individual",
       subcategory: "Fan",
       matricNo: "123456",
       hpNo: "01X-XXXXXXX",
@@ -75,7 +75,7 @@ export const taskCategoryMap: Record<string, Task[]> = {
     {
       id: "TASK10002",
       desc: "Humming sound from the motor",
-      category: "Private",
+      category: "Individual",
       subcategory: "Fan",
       matricNo: "123457",
       hpNo: "01X-XXXXXXX",
@@ -92,7 +92,7 @@ export const taskCategoryMap: Record<string, Task[]> = {
     {
       id: "TASK10003",
       desc: "Table leg broken",
-      category: "Private",
+      category: "Individual",
       subcategory: "Furniture",
       matricNo: "123458",
       hpNo: "01X-XXXXXXX",
@@ -107,7 +107,7 @@ export const taskCategoryMap: Record<string, Task[]> = {
     {
       id: "TASK10004",
       desc: "Wardrobe hinge loose",
-      category: "Private",
+      category: "Individual",
       subcategory: "Furniture",
       matricNo: "123459",
       hpNo: "01X-XXXXXXX",
@@ -152,7 +152,8 @@ export interface StaffPerformance {
   staffId: string;
   staffName: string;
   totalTasks: number;
-  averageRating: number; // Out of 5
+  tasksResolved?: number;
+  averageRating: number;
   recentFeedback: Feedback[];
   ratingTrend: RatingTrend[];
 }
@@ -172,8 +173,9 @@ export interface RatingTrend {
 export const staffPerformanceData: StaffPerformance[] = [
   {
     staffId: "S001",
-    staffName: "John Doe",
+    staffName: "Kevin Goh",
     totalTasks: 35,
+    tasksResolved: 32,
     averageRating: 4.3,
     recentFeedback: [
       {
@@ -206,8 +208,9 @@ export const staffPerformanceData: StaffPerformance[] = [
   },
   {
     staffId: "S002",
-    staffName: "Jane Lee",
+    staffName: "Ray",
     totalTasks: 42,
+    tasksResolved: 40,
     averageRating: 4.6,
     recentFeedback: [
       {
@@ -231,5 +234,85 @@ export const staffPerformanceData: StaffPerformance[] = [
       { month: "Jan 2025", averageRating: 4.5 },
       { month: "Dec 2024", averageRating: 4.4 },
     ],
+  },
+];
+
+export const dashboardCards = {
+  openedTickets: 124,
+  overdueTickets: 17,
+  resolvedThisMonth: 92,
+  mostReportedFacility: { category: "Furniture", percentage: 32 },
+};
+
+export const staffTaskData = [
+  { staffName: "Kevin Goh", tasksInHand: 12, oldestTicketDays: 7 },
+  { staffName: "Ray", tasksInHand: 8, oldestTicketDays: 3 },
+  { staffName: "Calvin", tasksInHand: 15, oldestTicketDays: 12 },
+  { staffName: "Steve", tasksInHand: 5, oldestTicketDays: 1 },
+];
+
+export const trendData = [
+  { month: "May", complaints: 45, satisfaction: 4.2 },
+  { month: "Jun", complaints: 50, satisfaction: 3.9 },
+  { month: "Jul", complaints: 38, satisfaction: 4.5 },
+  { month: "Aug", complaints: 60, satisfaction: 4.1 },
+  { month: "Sep", complaints: 55, satisfaction: 4.0 },
+  { month: "Oct", complaints: 48, satisfaction: 4.3 },
+];
+
+// Most frequent facility issues
+export const facilityIssues = [
+  { category: "Furniture", count: 30 },
+  { category: "Electrical socket", count: 25 },
+  { category: "Bathroom", count: 20 },
+  { category: "Ceiling fan", count: 10 },
+];
+
+export interface StudentComplaint {
+  complaintId: string;
+  facility: string;
+  assignedTo: string;
+  rating: number; // out of 5
+  comment: string;
+  openedAt: string;
+  closedAt?: string;
+}
+
+export const studentComplaints: StudentComplaint[] = [
+  {
+    complaintId: "TASK20001",
+    facility: "Ceiling Fan",
+    assignedTo: "Kevin Goh",
+    rating: 5,
+    comment: "Resolved very quickly!",
+    openedAt: "2025-10-20 10:30:00",
+    closedAt: "2025-10-21 14:00:00",
+  },
+  {
+    complaintId: "TASK20002",
+    facility: "Furniture",
+    assignedTo: "Stebby Loh",
+    rating: 4,
+    comment: "Good service.",
+    openedAt: "2025-10-22 09:15:00",
+    closedAt: "2025-10-23 11:45:00",
+  },
+  {
+    complaintId: "TASK20003",
+    facility: "Bathroom",
+    assignedTo: "Alicia Lee",
+    rating: 3,
+    comment: "Took longer than expected.",
+    openedAt: "2025-10-23 13:00:00",
+    closedAt: "2025-10-25 15:30:00",
+  },
+  {
+    complaintId: "TASK20004",
+    facility: "Electrical Socket",
+    assignedTo: "Kevin Goh",
+    rating: 5,
+    comment: "Excellent response!",
+    openedAt: "2025-10-24 08:45:00",
+    closedAt: "2025-10-24 12:20:00",
   },
 ];

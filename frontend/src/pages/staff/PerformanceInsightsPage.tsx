@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { staffPerformanceData } from "../../data/mockData"; // value import
-import type {
-  StaffPerformance,
-  Feedback,
-  RatingTrend,
-} from "../../data/mockData";
+import type { StaffPerformance, Feedback } from "../../data/mockData";
 import { Star, StarHalf } from "lucide-react";
 import {
   LineChart,
@@ -85,12 +81,11 @@ export default function PerformanceInsightsPage() {
       </div>
 
       {/* Recent Feedback */}
-      {/* Recent Feedback */}
       <div className="bg-white/70 backdrop-blur-md rounded-xl border border-gray-200 shadow p-6 transform transition-transform duration-300 hover:scale-102">
-        <h2 className="text-lg font-semibold text-purple-700 mb-4">
+        <h2 className="text-md font-semibold text-purple-700 mb-4">
           Recent Feedback
         </h2>
-        <div className="overflow-x-auto rounded-l">
+        <div className="overflow-x-auto rounded-md">
           <table className="min-w-full table-auto border border-gray-200 ">
             <thead>
               <tr className="bg-purple-100">
@@ -111,9 +106,9 @@ export default function PerformanceInsightsPage() {
             <tbody>
               {selectedStaff.recentFeedback.map((fb: Feedback, idx) => (
                 <tr key={idx} className="border-t border-gray-200">
-                  <td className="p-2 text-sm w-1/5">{fb.complaintId}</td>
-                  <td className="p-2 text-sm w-1/5">{fb.student}</td>
-                  <td className="p-2 text-sm w-1/5">
+                  <td className="p-2 text-xs w-1/5">{fb.complaintId}</td>
+                  <td className="p-2 text-xs w-1/5">{fb.student}</td>
+                  <td className="p-2 text-xs w-1/5">
                     {renderStars(fb.rating)}
                   </td>
                   <td className="p-2 text-sm w-2/5">{fb.comments}</td>
@@ -126,7 +121,7 @@ export default function PerformanceInsightsPage() {
 
       {/* Rating Trend */}
       <div className="bg-white/70 backdrop-blur-md rounded-xl border border-gray-200 shadow p-6 transform transition-transform duration-300 hover:scale-102">
-        <h2 className="text-lg font-semibold text-purple-700 mb-4">
+        <h2 className="text-md font-semibold text-purple-700 mb-4">
           Rating Trend (Last 6 Months)
         </h2>
         <ResponsiveContainer width="100%" height={200}>

@@ -132,7 +132,7 @@ export default function TaskDetailPage() {
         {/* Left Column */}
         <div className="space-y-3">
           <FieldRow label="Complaint ID" value={editableTask.id} />
-          <FieldRow label="Category" value={category || ""} />
+          <FieldRow label="Category" value={editableTask.category} />
           <FieldRow
             label="Subcategory"
             value={editableTask.subcategory || ""}

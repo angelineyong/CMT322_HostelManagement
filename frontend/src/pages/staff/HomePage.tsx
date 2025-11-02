@@ -37,7 +37,7 @@ export default function HomePage() {
 
       {/* Chart Section */}
       <div className="bg-white/60 backdrop-blur-md rounded-xl border border-gray-200 shadow p-4">
-        <h2 className="text-lg font-semibold text-purple-700 mb-4">
+        <h2 className="text-md font-semibold text-purple-700 mb-4">
           Task Assigned Aging Overview
         </h2>
         <div className="h-64">
