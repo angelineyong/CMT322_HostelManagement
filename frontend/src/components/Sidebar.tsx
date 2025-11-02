@@ -28,7 +28,11 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, path: "/staff/" },
     { name: "Task Assigned", icon: ClipboardList, path: "/staff/task" },
-    { name: "Feedback", icon: MessageSquare, path: "/staff/feedback" },
+    {
+      name: "Performance Insights",
+      icon: MessageSquare,
+      path: "/staff/performance",
+    },
     { name: "Dashboard", icon: BarChart3, path: "/admin/dashboard" },
     { name: "Reports", icon: FileText, path: "/admin/reports" },
     { name: "Opened Ticket", icon: Ticket, path: "/admin/ticket" },

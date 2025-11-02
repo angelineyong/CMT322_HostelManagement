@@ -147,3 +147,89 @@ export const staffOptions = [
   "Ray Cheang",
   "Evelyn Teo",
 ];
+
+export interface StaffPerformance {
+  staffId: string;
+  staffName: string;
+  totalTasks: number;
+  averageRating: number; // Out of 5
+  recentFeedback: Feedback[];
+  ratingTrend: RatingTrend[];
+}
+
+export interface Feedback {
+  complaintId: string;
+  student: string;
+  rating: number; // Out of 5
+  comments: string;
+}
+
+export interface RatingTrend {
+  month: string; // e.g., "May 2025"
+  averageRating: number;
+}
+
+export const staffPerformanceData: StaffPerformance[] = [
+  {
+    staffId: "S001",
+    staffName: "John Doe",
+    totalTasks: 35,
+    averageRating: 4.3,
+    recentFeedback: [
+      {
+        complaintId: "TASK10001",
+        student: "Alice Lim",
+        rating: 5,
+        comments: "Great service, very prompt!",
+      },
+      {
+        complaintId: "TASK10002",
+        student: "Brian Tan",
+        rating: 4,
+        comments: "Good response but slightly delayed.",
+      },
+      {
+        complaintId: "TASK10003",
+        student: "Cindy Wong",
+        rating: 4,
+        comments: "Resolved efficiently.",
+      },
+    ],
+    ratingTrend: [
+      { month: "May 2025", averageRating: 3.9 },
+      { month: "Apr 2025", averageRating: 4.4 },
+      { month: "Mar 2025", averageRating: 3.0 },
+      { month: "Feb 2025", averageRating: 4.2 },
+      { month: "Jan 2025", averageRating: 4.1 },
+      { month: "Dec 2024", averageRating: 3.0 },
+    ],
+  },
+  {
+    staffId: "S002",
+    staffName: "Jane Lee",
+    totalTasks: 42,
+    averageRating: 4.6,
+    recentFeedback: [
+      {
+        complaintId: "TASK10010",
+        student: "David Ng",
+        rating: 5,
+        comments: "Excellent!",
+      },
+      {
+        complaintId: "TASK10012",
+        student: "Emily Tan",
+        rating: 4,
+        comments: "Good service.",
+      },
+    ],
+    ratingTrend: [
+      { month: "May 2025", averageRating: 4.7 },
+      { month: "Apr 2025", averageRating: 4.6 },
+      { month: "Mar 2025", averageRating: 2.7 },
+      { month: "Feb 2025", averageRating: 4.5 },
+      { month: "Jan 2025", averageRating: 4.5 },
+      { month: "Dec 2024", averageRating: 4.4 },
+    ],
+  },
+];

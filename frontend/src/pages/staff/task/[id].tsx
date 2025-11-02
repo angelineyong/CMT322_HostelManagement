@@ -7,7 +7,7 @@ import {
 } from "../../../data/mockData";
 import type { Task } from "@/types";
 import EditableSelect from "../../../components/EditableSelect";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 
 export default function TaskDetailPage() {
   const { category, id } = useParams<{ category: string; id: string }>();
@@ -16,13 +16,15 @@ export default function TaskDetailPage() {
   const [editableTask, setEditableTask] = useState<Task | null>(null);
   const [workNotes, setWorkNotes] = useState("");
   const [additionalComments, setAdditionalComments] = useState("");
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   useEffect(() => {
     if (category && id && taskCategoryMap[category]) {
       const foundTask =
         taskCategoryMap[category].find((t) => t.id === id) || null;
       setEditableTask(foundTask);
-      setAdditionalComments(""); // empty initially
+      setAdditionalComments("");
     }
   }, [category, id]);
 
@@ -30,12 +32,40 @@ export default function TaskDetailPage() {
     return <div className="p-6 text-gray-600">Task not found.</div>;
 
   const updateField = (field: keyof Task, value: string) => {
+    if (field === "status") {
+      if (value === "Closed Incomplete") {
+        const confirmed = window.confirm(
+          "Are you sure you want to cancel this incident?"
+        );
+        if (!confirmed) return;
+      }
+      // Once Closed Incomplete is confirmed, disable further edits
+    }
     setEditableTask((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
   const handleUpdate = () => {
     console.log("Updated:", editableTask, workNotes, additionalComments);
     alert("Changes applied successfully!");
+  };
+
+  const handleResolveSubmit = () => {
+    if (uploadedFiles.length === 0) {
+      alert("Please upload at least one photo as evidence.");
+      return;
+    }
+    // Set status to Closed Complete
+    setEditableTask((prev) =>
+      prev ? { ...prev, status: "Closed Complete" } : prev
+    );
+    setShowResolveModal(false);
+    alert(`Incident ${editableTask?.id} resolved!`);
+  };
+
+  // File change handler
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    setUploadedFiles(Array.from(e.target.files));
   };
 
   // Reusable side-by-side label + input
@@ -89,10 +119,7 @@ export default function TaskDetailPage() {
             Update
           </button>
           <button
-            onClick={() => {
-              alert(`Incident ${editableTask.id} resolved!`);
-              updateField("status", "Closed Complete"); // Optionally mark as resolved
-            }}
+            onClick={() => setShowResolveModal(true)}
             className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium cursor-pointer"
           >
             Resolve Incident
@@ -148,21 +175,29 @@ export default function TaskDetailPage() {
             <label className="w-36 text-sm text-gray-600 text-right">
               Status
             </label>
-            <select
-              value={editableTask.status || "In Progress"}
-              onChange={(e) => updateField("status", e.target.value)}
-              className="flex-1 border rounded px-2 py-1 text-sm cursor-pointer"
-            >
-              <option>Open</option>
-              <option>In Progress</option>
-              <option>On Hold</option>
-              <option>Closed Complete</option>
-              <option>Closed InComplete</option>
-            </select>
+            {editableTask.status === "Closed Complete" ||
+            editableTask.status === "Closed Incomplete" ? (
+              <input
+                value={editableTask.status}
+                disabled
+                className="flex-1 border rounded px-2 py-1 text-sm bg-gray-100"
+              />
+            ) : (
+              <select
+                value={editableTask.status || "In Progress"}
+                onChange={(e) => updateField("status", e.target.value)}
+                className="flex-1 border rounded px-2 py-1 text-sm cursor-pointer"
+              >
+                <option>Open</option>
+                <option>In Progress</option>
+                <option>On Hold</option>
+                <option>Closed Incomplete</option>
+              </select>
+            )}
           </div>
         </div>
 
-        {/* Description Full Width - Disabled */}
+        {/* Description Full Width */}
         <div className="col-span-2 mt-3">
           <div className="flex items-start gap-3">
             <label className="w-36 text-sm text-gray-600 text-right pt-2">
@@ -208,6 +243,59 @@ export default function TaskDetailPage() {
           />
         </div>
       </div>
+
+      {/* Resolve Incident Modal */}
+      {showResolveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-1/2 relative">
+            <button
+              onClick={() => setShowResolveModal(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+            >
+              <X />
+            </button>
+            <h3 className="text-lg font-semibold mb-4">Resolve Incident</h3>
+            <p className="text-sm text-gray-600 mb-2">
+              Upload at least one photo as evidence:
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="mb-4"
+            />
+            {uploadedFiles.length > 0 && (
+              <div className="mb-4 space-y-2">
+                {uploadedFiles.map((file, idx) => (
+                  <div key={idx} className="text-sm">
+                    {file.name}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowResolveModal(false)}
+                className="px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-100 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResolveSubmit}
+                className={`px-4 py-2 rounded-md text-white text-sm ${
+                  uploadedFiles.length > 0
+                    ? "bg-purple-500 hover:bg-purple-600"
+                    : "bg-gray-300 cursor-not-allowed"
+                }`}
+                disabled={uploadedFiles.length === 0}
+              >
+                Submit & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
