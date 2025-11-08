@@ -141,7 +141,7 @@ export default function TaskDetailPage() {
           <FieldRow label="HP No." value={editableTask.hpNo || ""} />
           <FieldRow label="Location/Room" value={editableTask.location || ""} />
           <FieldRow
-            label="Date of Service"
+            label="Date of Service Not Function"
             type="date"
             value={editableTask.date || ""}
           />
