@@ -240,7 +240,7 @@ const StudentHome: React.FC = () => {
 
 				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-green-100">
 					<div className="flex items-center gap-10">
-						<img src={resolvedIcon} alt="resolved" className="w-13 h-13 rounded-md object-cover" />
+						<img src={resolvedIcon} alt="resolved" className="w-12 h-12 rounded-md object-cover" />
 						<div>
 							<div className="text-xl font-semibold text-green-800">Resolved</div>
 							<div className="text-7xl font-bold text-green-900 mt-2">{resolvedCount}</div>
@@ -252,9 +252,9 @@ const StudentHome: React.FC = () => {
 			{/* Bottom area: left table, right calendar */}
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 				<div className="lg:col-span-2">
-					<div className="bg-white rounded-lg shadow p-4">
-						<div className="flex items-center justify-between mb-4">
-							<h2 className="text-xl font-semibold">Recent Complaints</h2>
+					<div className="bg-white rounded-lg shadow p-7">
+						<div className="flex items-center justify-between mb-7">
+							<h2 className="text-2xl font-semibold">Recent Complaints</h2>
 						</div>
 						
 						<div className="flex flex-col sm:flex-row gap-4 mb-4">
