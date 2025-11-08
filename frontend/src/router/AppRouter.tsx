@@ -5,6 +5,7 @@ import TaskCategoryPage from "../pages/staff/task/[category]";
 import TaskDetailPage from "../pages/staff/task/[id]";
 import PerformanceInsightsPage from "../pages/staff/PerformanceInsightsPage";
 import DashboardPage from "../pages/admin/DashboardPage";
+import StudentHome from "../pages/student/StudentHome";
 
 export default function AppRouter() {
   return (
@@ -16,6 +17,8 @@ export default function AppRouter() {
       <Route path="/staff/performance" element={<PerformanceInsightsPage />} />
 
       <Route path="/admin/dashboard" element={<DashboardPage />} />
+
+      <Route path="/student" element={<StudentHome />} />
     </Routes>
   );
 }

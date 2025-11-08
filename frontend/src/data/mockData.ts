@@ -316,3 +316,20 @@ export const studentComplaints: StudentComplaint[] = [
     closedAt: "2025-10-24 12:20:00",
   },
 ];
+
+// Student-facing summary dataset (Complaint ID, Facility Category, Date Submitted, Status)
+export interface StudentSummary {
+  complaintId: string;
+  facilityCategory: string;
+  dateSubmitted: string; // ISO or readable date string
+  status: "Pending" | "In Progress" | "Resolved" | string;
+}
+
+export const studentSummaryData: StudentSummary[] = [
+  { complaintId: "C2025001", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-11-01", status: "Pending" },
+  { complaintId: "C2025002", facilityCategory: "Bathroom", dateSubmitted: "2025-10-28", status: "In Progress" },
+  { complaintId: "C2025003", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-25", status: "Resolved" },
+  { complaintId: "C2025004", facilityCategory: "Furniture", dateSubmitted: "2025-10-22", status: "Pending" },
+  { complaintId: "C2025005", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-20", status: "Resolved" },
+  { complaintId: "C2025006", facilityCategory: "Bathroom", dateSubmitted: "2025-10-18", status: "In Progress" },
+];
