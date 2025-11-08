@@ -1,8 +1,35 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { studentSummaryData, holidays, staffAvailability } from "../../data/mockData";
+import HolidayBanner from "../../components/HolidayBanner";
 import pendingIcon from "../../assets/PendingComplaint.png";
 import inProgressIcon from "../../assets/InProgress.png";
 import resolvedIcon from "../../assets/Resolved.png";
+import appLogo from "../../assets/CampusFix_Logo2.png";
+
+// small hook to animate numbers from 0 -> target
+function useCountUp(target: number, duration = 800) {
+	const [value, setValue] = React.useState(0);
+
+	React.useEffect(() => {
+		if (!target || target <= 0) {
+			setValue(target || 0);
+			return;
+		}
+
+		let start = performance.now();
+		let raf = 0;
+		const step = (now: number) => {
+			const t = Math.min(1, (now - start) / duration);
+			setValue(Math.round(t * target));
+			if (t < 1) raf = requestAnimationFrame(step);
+		};
+
+		raf = requestAnimationFrame(step);
+		return () => cancelAnimationFrame(raf);
+	}, [target, duration]);
+
+	return value;
+}
 
 const Calendar: React.FC = () => {
 	const [current, setCurrent] = useState(new Date());
@@ -111,25 +138,39 @@ const Calendar: React.FC = () => {
 			</div>
 		</div>
 	);
-};
+	};
 
 const StudentHome: React.FC = () => {
+	// header visibility for on-scroll animation
+	const headerRef = useRef<HTMLDivElement | null>(null);
+	const [headerVisible, setHeaderVisible] = useState(false);
+
+	useEffect(() => {
+		if (!headerRef.current) return;
+		const obs = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) setHeaderVisible(true);
+				});
+			},
+			{ threshold: 0.1 }
+		);
+
+		obs.observe(headerRef.current);
+		return () => obs.disconnect();
+	}, []);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [sortBy, setSortBy] = useState("");
-	const [currentHolidayIndex, setCurrentHolidayIndex] = useState(0);
-
-	// Auto-rotate holidays every 7 seconds
-	useEffect(() => {
-		const timer = setInterval(() => {
-			setCurrentHolidayIndex((current) => (current + 1) % holidays.length);
-		}, 7000);
-
-		return () => clearInterval(timer);
-	}, [holidays.length]);
+    
 
 	const pendingCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "pending").length;
 	const inProgressCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "in progress").length;
 	const resolvedCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "resolved").length;
+
+	// animated count-up values
+	const pending = useCountUp(pendingCount, 900);
+	const inProgress = useCountUp(inProgressCount, 900);
+	const resolved = useCountUp(resolvedCount, 900);
 
 	const filteredAndSortedComplaints = useMemo(() => {
 		let result = [...studentSummaryData];
@@ -165,56 +206,53 @@ const StudentHome: React.FC = () => {
 	}, [searchTerm, sortBy]);
 
 	return (
-		<div className="p-9 max-w-7xl mx-auto">
-			<h1 className="text-5xl font-semibold mb-15">Welcome back, Student</h1>
+		<div className="p-9 mx-auto">
+			{/* Section wrapper */}
+			<div className="relative w-full">
 
-			{/* Holidays banner: auto-rotating holiday display */}
-			<div className="mb-8">
-				<div className="relative rounded-lg overflow-hidden h-55 bg-gray-200">
-					{holidays && holidays.length > 0 && (
-						<>
-							{/* background image with fade transition */}
-							<div
-								className="absolute inset-0 bg-cover bg-center transition-opacity duration-[1500ms]"
-								style={{ backgroundImage: `url(${holidays[currentHolidayIndex].image})` }}
-							/>
-							{/* dim overlay */}
-							<div className="absolute inset-0 bg-black/30" />
-							<div className="relative z-10 h-full flex items-center px-6">
-								<div className="flex-1 transition-all duration-800">
-									<div className="text-white text-2xl font-semibold">{holidays[currentHolidayIndex].name}</div>
-									<div className="text-white/90 mt-1">{holidays[currentHolidayIndex].date}</div>
-									{holidays[currentHolidayIndex].description && (
-										<div className="text-white/80 mt-2">{holidays[currentHolidayIndex].description}</div>
-									)}
-								</div>
-								{/* Next button on the right overlay */}
-								<button
-									aria-label="Next holiday"
-									onClick={() => setCurrentHolidayIndex((c) => (c + 1) % holidays.length)}
-									className="ml-4 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full"
-								>
-									›
-								</button>
-
-								{/* Dots centered at the bottom of the banner */}
-								<div className="absolute left-1/2 transform -translate-x-1/2 bottom-3 flex gap-2">
-									{holidays.map((_, index) => (
-										<button
-											key={index}
-											onClick={() => setCurrentHolidayIndex(index)}
-											className={`w-2 h-2 rounded-full transition-all ${
-												index === currentHolidayIndex ? "bg-white scale-125" : "bg-white/50"
-											}`}
-											aria-label={`Show holiday ${index + 1}`}
-										/>
-									))}
-								</div>
-							</div>
-						</>
-					)}
+			{/* Wave Background */}
+			<div className="absolute inset-0 z-0">
+				<div className="wave">
+				<svg
+					width="100%"
+					height="100%"
+					viewBox="0 0 1140 400"
+					xmlns="http://www.w3.org/2000/svg"
+					preserveAspectRatio="none"
+				>
+					<path
+					fill="#818CF8"
+					fillOpacity="0.2"
+					d="M0,96L48,112C96,128,192,160,288,186.7C384,213,480,235,576,224C672,213,768,171,864,144C960,117,1056,107,1152,122.7C1248,139,1344,181,1392,202.7L1440,224L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+					/>
+					<path
+					fill="#818CF8"
+					fillOpacity="0.3"
+					d="M0,32L48,53.3C96,75,192,117,288,122.7C384,128,480,96,576,90.7C672,85,768,107,864,128C960,149,1056,171,1152,165.3C1248,160,1344,128,1392,112L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+					/>
+				</svg>
 				</div>
 			</div>
+
+			{/* Header content on top of the wave */}
+			<div
+				ref={headerRef}
+				className={`relative z-10 transform transition-all duration-700 ease-out bg-transparent text-center ${
+				headerVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+				}`}
+			>
+				<div className="flex items-center justify-center gap-3 pt-16">
+					<img src={appLogo} alt="Fixify Logo" className="h-40 w-40 rounded-lg mb-20" />
+					<div className="flex flex-col justify-center h-40">
+						<div className="text-6xl font-bold text-indigo-700 tracking-tight">Fixify</div>
+						<div className="text-1xl text-gray-500 font-medium mb-4">Campus Facility Management</div>
+					</div>
+				</div>				
+				<h1 className="text-3xl font-semibold mb-5">Welcome back, Kevin.</h1>
+				</div>
+			</div>
+
+			
 
 			{/* Top three summary boxes */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-9 mb-10">
@@ -223,7 +261,7 @@ const StudentHome: React.FC = () => {
 						<img src={pendingIcon} alt="pending" className="w-12 h-12 rounded-md object-cover" />
 						<div>
 							<div className="text-xl font-semibold text-amber-800">Pending Complaints</div>
-							<div className="text-7xl font-bold text-amber-900 mt-2">{pendingCount}</div>
+							<div className="text-7xl font-bold text-amber-900 mt-2">{pending}</div>
 						</div>
 					</div>
 				</div>
@@ -233,7 +271,7 @@ const StudentHome: React.FC = () => {
 						<img src={inProgressIcon} alt="in-progress" className="w-15 h-15 rounded-md object-cover" />
 						<div>
 							<div className="text-xl font-semibold text-blue-800">In Progress</div>
-							<div className="text-7xl font-bold text-blue-900 mt-2">{inProgressCount}</div>
+							<div className="text-7xl font-bold text-blue-900 mt-2">{inProgress}</div>
 						</div>
 					</div>
 				</div>
@@ -243,7 +281,7 @@ const StudentHome: React.FC = () => {
 						<img src={resolvedIcon} alt="resolved" className="w-12 h-12 rounded-md object-cover" />
 						<div>
 							<div className="text-xl font-semibold text-green-800">Resolved</div>
-							<div className="text-7xl font-bold text-green-900 mt-2">{resolvedCount}</div>
+							<div className="text-7xl font-bold text-green-900 mt-2">{resolved}</div>
 						</div>
 					</div>
 				</div>
@@ -321,8 +359,13 @@ const StudentHome: React.FC = () => {
 					<Calendar />
 				</div>
 			</div>
+
+			{/* Holiday banner component placed after Recent Complaints and Calendar */}
+			<div className="mt-8">
+				<HolidayBanner />
+			</div>
 		</div>
-	);
-};
+		);
+		};
 
 export default StudentHome;
