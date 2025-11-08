@@ -332,4 +332,67 @@ export const studentSummaryData: StudentSummary[] = [
   { complaintId: "C2025004", facilityCategory: "Furniture", dateSubmitted: "2025-10-22", status: "Pending" },
   { complaintId: "C2025005", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-20", status: "Resolved" },
   { complaintId: "C2025006", facilityCategory: "Bathroom", dateSubmitted: "2025-10-18", status: "In Progress" },
+  { complaintId: "C2025007", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-16", status: "Pending" },
+  { complaintId: "C2025008", facilityCategory: "Furniture", dateSubmitted: "2025-10-14", status: "Resolved" },
+  { complaintId: "C2025009", facilityCategory: "Bathroom", dateSubmitted: "2025-10-12", status: "In Progress" },
+  { complaintId: "C2025010", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-10", status: "Pending" },
+  { complaintId: "C2025011", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-08", status: "Resolved" },
+  { complaintId: "C2025012", facilityCategory: "Furniture", dateSubmitted: "2025-10-05", status: "Pending" },
 ];
+
+// Holidays for the student-facing banner
+export interface Holiday {
+  date: string; // YYYY-MM-DD
+  name: string;
+  image?: string; // optional background image URL for themed banner
+  description?: string;
+}
+
+export const holidays: Holiday[] = [
+  {
+    date: "2025-12-25",
+    name: "Christmas",
+    image: "https://t3.ftcdn.net/jpg/02/98/25/92/240_F_298259257_5lXdLjs950Xo4Vh6kxy0iuwaJ4DhIMXE.jpg",
+    description: "Christmas celebration",
+  },
+  // {
+  //   date: "2025-12-31",
+  //   name: "New Year's Eve",
+  //   image: "https://t4.ftcdn.net/jpg/03/06/04/25/360_F_306042594_2nGNHI73YQSSIbZEeFdJlCnNepshI49B.jpg",
+  //   description: "Countdown to new year",
+  // },
+  {
+    date: "2026-01-01",
+    name: "New Year's Day",
+    image: "https://static.vecteezy.com/system/resources/previews/071/012/427/non_2x/happy-new-year-2026-sale-banner-vector.jpg",
+    description: "Start of the new year",
+  },
+  {
+    date: "2026-2-1, 2026-2-2",
+    name: "Thaipusam",
+    image: "https://staging.sitegiant.my/wp-content/uploads/2025/02/Thaipusam_announcement_Long_Banner.png",
+    description: "Hindu festival of devotion and penance",
+  },
+  {
+    date: "2026-2-17, 2026-2-18",
+    name: "Chinese New Year",
+    image: "https://t4.ftcdn.net/jpg/04/76/01/77/360_F_476017799_YPUfcPSvV4bDcuMo751P93nZVoSqFXvC.jpg",
+    description: "Lunar new year of togetherness and prosperity",
+  },
+  {
+    date: "2026-2-21, 2026-2-22",
+    name: "Hari Raya Aidilfitri",
+    image: "https://png.pngtree.com/thumb_back/fh260/background/20210417/pngtree-banner-selamat-hari-raya-aidilfitri-vector-background-design-green-gradient-image_632505.jpg",
+    description: "Festival marking end of Ramadan",
+  },
+];
+
+// Current staff availability/status to display in the dashboard
+export const staffAvailability = {
+  name: "Maintenance Team",
+  status: "Available",
+  // statusType can be: 'available' | 'out-of-office' | 'unavailable' | 'after office hours'
+  statusType: "available",
+  note: "On duty until 17:00",
+  updatedAt: "2025-11-08 09:00",
+};
