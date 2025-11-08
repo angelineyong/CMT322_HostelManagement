@@ -4,7 +4,7 @@ import HolidayBanner from "../../components/HolidayBanner";
 import pendingIcon from "../../assets/PendingComplaint.png";
 import inProgressIcon from "../../assets/InProgress.png";
 import resolvedIcon from "../../assets/Resolved.png";
-import appLogo from "../../assets/CampusFix_Logo2.png";
+// import appLogo from "../../assets/CampusFix_Logo2.png";
 
 // small hook to animate numbers from 0 -> target
 function useCountUp(target: number, duration = 800) {
@@ -216,7 +216,7 @@ const StudentHome: React.FC = () => {
 				<svg
 					width="100%"
 					height="100%"
-					viewBox="0 0 1140 400"
+					viewBox="0 0 1040 400"
 					xmlns="http://www.w3.org/2000/svg"
 					preserveAspectRatio="none"
 				>
@@ -241,14 +241,14 @@ const StudentHome: React.FC = () => {
 				headerVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
 				}`}
 			>
-				<div className="flex items-center justify-center gap-3 pt-16">
-					<img src={appLogo} alt="Fixify Logo" className="h-40 w-40 rounded-lg mb-20" />
-					<div className="flex flex-col justify-center h-40">
-						<div className="text-6xl font-bold text-indigo-700 tracking-tight">Fixify</div>
-						<div className="text-1xl text-gray-500 font-medium mb-4">Campus Facility Management</div>
+				<div className="flex items-center justify-center gap-3 pt-25">
+					{/* <img src={appLogo} alt="Fixify Logo" className="h-40 w-40 rounded-lg mb-20" /> */}
+					<div className="flex flex-col justify-center h-60">
+						<div className="text-9xl font-bold text-indigo-700 mb-2">Fixify</div>
+						<div className="text-1xl text-indigo-500 font-medium mb-20">Creating comfort through your feedback.</div>
 					</div>
 				</div>				
-				<h1 className="text-3xl font-semibold mb-5">Welcome back, Kevin.</h1>
+				<h1 className="text-3xl font-semibold mb-5 text-left">Welcome back, Kevin.</h1>
 				</div>
 			</div>
 
