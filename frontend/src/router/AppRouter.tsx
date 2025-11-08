@@ -6,6 +6,7 @@ import TaskDetailPage from "../pages/staff/task/[id]";
 import PerformanceInsightsPage from "../pages/staff/PerformanceInsightsPage";
 import DashboardPage from "../pages/admin/DashboardPage";
 import StudentHome from "../pages/student/StudentHome";
+import CreateComplaint from "../pages/student/CreateComplaint";
 
 export default function AppRouter() {
   return (
@@ -19,6 +20,7 @@ export default function AppRouter() {
       <Route path="/admin/dashboard" element={<DashboardPage />} />
 
       <Route path="/student" element={<StudentHome />} />
+      <Route path="/student/complaint" element={<CreateComplaint />} />
     </Routes>
   );
 }
