@@ -14,7 +14,7 @@ const steps = [
 const ComplaintDetail: React.FC = () => {
   const { complaintId } = useParams<{ complaintId: string }>();
 
-  // ✅ Find the matching complaint from mock data
+  // Find the matching complaint from mock data
   const complaint = studentSummaryData.find(
     (item) => item.complaintId === complaintId
   );
@@ -22,7 +22,7 @@ const ComplaintDetail: React.FC = () => {
   if (!complaint) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-600 text-lg">
-        Complaint not found 😢
+        Complaint not found...
       </div>
     );
   }
