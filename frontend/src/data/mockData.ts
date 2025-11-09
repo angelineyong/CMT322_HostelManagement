@@ -323,21 +323,23 @@ export interface StudentSummary {
   facilityCategory: string;
   dateSubmitted: string; // ISO or readable date string
   status: "Pending" | "In Progress" | "Resolved" | string;
+  location?: string;
+  roomNumber?: string;
 }
 
 export const studentSummaryData: StudentSummary[] = [
-  { complaintId: "C2025001", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-11-01", status: "Pending" },
-  { complaintId: "C2025002", facilityCategory: "Bathroom", dateSubmitted: "2025-10-28", status: "In Progress" },
-  { complaintId: "C2025003", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-25", status: "Resolved" },
-  { complaintId: "C2025004", facilityCategory: "Furniture", dateSubmitted: "2025-10-22", status: "Pending" },
-  { complaintId: "C2025005", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-20", status: "Resolved" },
-  { complaintId: "C2025006", facilityCategory: "Bathroom", dateSubmitted: "2025-10-18", status: "In Progress" },
-  { complaintId: "C2025007", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-16", status: "Pending" },
-  { complaintId: "C2025008", facilityCategory: "Furniture", dateSubmitted: "2025-10-14", status: "Resolved" },
-  { complaintId: "C2025009", facilityCategory: "Bathroom", dateSubmitted: "2025-10-12", status: "In Progress" },
-  { complaintId: "C2025010", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-10", status: "Pending" },
-  { complaintId: "C2025011", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-08", status: "Resolved" },
-  { complaintId: "C2025012", facilityCategory: "Furniture", dateSubmitted: "2025-10-05", status: "Pending" },
+  { complaintId: "C2025001", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-11-01", status: "Pending", location: "M06", roomNumber: "01-7A"},
+  { complaintId: "C2025002", facilityCategory: "Bathroom", dateSubmitted: "2025-10-28", status: "In Progress", location: "M06", roomNumber: "01-7A"},
+  { complaintId: "C2025003", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-25", status: "Resolved", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025004", facilityCategory: "Furniture", dateSubmitted: "2025-10-22", status: "In Progress", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025005", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-20", status: "Resolved", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025006", facilityCategory: "Bathroom", dateSubmitted: "2025-10-18", status: "Resolved", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025007", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-16", status: "Resolved", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025008", facilityCategory: "Furniture", dateSubmitted: "2025-10-14", status: "Resolved", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025009", facilityCategory: "Bathroom", dateSubmitted: "2025-10-12", status: "Resolved", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025010", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-10", status: "Resolved", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025011", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-08", status: "Resolved", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025012", facilityCategory: "Furniture", dateSubmitted: "2025-10-05", status: "Resolved", location: "M06", roomNumber: "01-7A" },
 ];
 
 // Holidays for the student-facing banner
@@ -355,12 +357,6 @@ export const holidays: Holiday[] = [
     image: "https://t3.ftcdn.net/jpg/02/98/25/92/240_F_298259257_5lXdLjs950Xo4Vh6kxy0iuwaJ4DhIMXE.jpg",
     description: "Christmas celebration",
   },
-  // {
-  //   date: "2025-12-31",
-  //   name: "New Year's Eve",
-  //   image: "https://t4.ftcdn.net/jpg/03/06/04/25/360_F_306042594_2nGNHI73YQSSIbZEeFdJlCnNepshI49B.jpg",
-  //   description: "Countdown to new year",
-  // },
   {
     date: "2026-01-01",
     name: "New Year's Day",

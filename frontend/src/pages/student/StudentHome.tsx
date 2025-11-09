@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { studentSummaryData, holidays, staffAvailability } from "../../data/mockData";
 import HolidayBanner from "../../components/HolidayBanner";
 import pendingIcon from "../../assets/PendingComplaint.png";
@@ -162,7 +163,7 @@ const StudentHome: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [sortBy, setSortBy] = useState("");
     
-
+	const navigate = useNavigate();
 	const pendingCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "pending").length;
 	const inProgressCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "in progress").length;
 	const resolvedCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "resolved").length;
@@ -336,7 +337,25 @@ const StudentHome: React.FC = () => {
 											<td className="py-3">{complaint.complaintId}</td>
 											<td className="py-3">{complaint.dateSubmitted}</td>
 											<td className="py-3">{complaint.facilityCategory}</td>
-											<td className="py-3">{complaint.status === "Resolved" ? <span className="text-green-600">Resolved</span> : complaint.status === "Pending" ? <span className="text-amber-600">Pending</span> : <span className="text-blue-600">In Progress</span>}</td>
+											<td className="py-3">
+												<button
+													onClick={() =>
+													navigate(`/complaint/${complaint.complaintId}`)
+													}
+													className={`px-4 py-1 rounded-full text-sm font-semibold transition-all duration-200 shadow-sm
+													${
+														complaint.status === "Resolved"
+														? "bg-green-100 text-green-700 border border-green-400 hover:bg-green-200"
+														: complaint.status === "In Progress"
+														? "bg-blue-100 text-blue-700 border border-blue-400 hover:bg-blue-200"
+														: complaint.status === "Pending"
+														? "bg-amber-100 text-amber-700 border border-amber-400 hover:bg-amber-200"
+														: "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
+													}`}
+												>
+												{complaint.status}
+												</button>
+											</td>
 										</tr>
 									))}
 								</tbody>
