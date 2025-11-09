@@ -1,25 +1,19 @@
 import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { studentSummaryData } from "../../data/mockData";
 import { ArrowRight } from "lucide-react";
+import ComplaintDetail from "./ComplaintDetail";
 
 const TrackComplaint: React.FC = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("");
-
-  // Handle click on complaint status → go to detail page
-  const handleStatusClick = (complaintId: string) => {
-    navigate(`/complaint/${complaintId}`);
-  };
+  const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
 
   // Filter + sort complaints
   const filteredAndSortedComplaints = useMemo(() => {
     let result = [...studentSummaryData];
+    const term = searchTerm.toLowerCase();
 
-    // Search filter
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
       result = result.filter(
         (c) =>
           c.complaintId.toLowerCase().includes(term) ||
@@ -30,7 +24,6 @@ const TrackComplaint: React.FC = () => {
       );
     }
 
-    // Sorting
     switch (sortBy) {
       case "date-asc":
         result.sort(
@@ -54,13 +47,6 @@ const TrackComplaint: React.FC = () => {
       case "status":
         result.sort((a, b) => a.status.localeCompare(b.status));
         break;
-      default:
-        // default sort by newest first
-        result.sort(
-          (a, b) =>
-            new Date(b.dateSubmitted).getTime() -
-            new Date(a.dateSubmitted).getTime()
-        );
     }
 
     return result;
@@ -129,7 +115,7 @@ const TrackComplaint: React.FC = () => {
                   {/* Status button */}
                   <td className="py-3">
                     <button
-                      onClick={() => handleStatusClick(complaint.complaintId)}
+                      onClick={() => setSelectedComplaintId(complaint.complaintId)}
                       className={`px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1 transition-all duration-200 shadow-sm hover:scale-105
                         ${
                           complaint.status === "Resolved"
@@ -153,6 +139,14 @@ const TrackComplaint: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Modal Popup */}
+      {selectedComplaintId && (
+        <ComplaintDetail
+          complaintId={selectedComplaintId}
+          onClose={() => setSelectedComplaintId(null)}
+        />
+      )}
     </div>
   );
 };

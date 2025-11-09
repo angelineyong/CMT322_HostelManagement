@@ -5,7 +5,7 @@ import HolidayBanner from "../../components/HolidayBanner";
 import pendingIcon from "../../assets/PendingComplaint.png";
 import inProgressIcon from "../../assets/InProgress.png";
 import resolvedIcon from "../../assets/Resolved.png";
-// import appLogo from "../../assets/CampusFix_Logo2.png";
+import ComplaintDetail from "./ComplaintDetail";
 
 // small hook to animate numbers from 0 -> target
 function useCountUp(target: number, duration = 800) {
@@ -163,7 +163,8 @@ const StudentHome: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [sortBy, setSortBy] = useState("");
     
-	const navigate = useNavigate();
+	// const navigate = useNavigate();
+	const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
 	const pendingCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "pending").length;
 	const inProgressCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "in progress").length;
 	const resolvedCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "resolved").length;
@@ -243,7 +244,6 @@ const StudentHome: React.FC = () => {
 				}`}
 			>
 				<div className="flex items-center justify-center gap-3 pt-25">
-					{/* <img src={appLogo} alt="Fixify Logo" className="h-40 w-40 rounded-lg mb-20" /> */}
 					<div className="flex flex-col justify-center h-60">
 						<div className="text-9xl font-bold text-indigo-700 mb-2">Fixify</div>
 						<div className="text-1xl text-indigo-500 font-medium mb-20">Creating comfort through your feedback.</div>
@@ -339,10 +339,8 @@ const StudentHome: React.FC = () => {
 											<td className="py-3">{complaint.facilityCategory}</td>
 											<td className="py-3">
 												<button
-													onClick={() =>
-													navigate(`/complaint/${complaint.complaintId}`)
-													}
-													className={`px-4 py-1 rounded-full text-sm font-semibold transition-all duration-200 shadow-sm
+													onClick={() => setSelectedComplaintId(complaint.complaintId)}
+													className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 shadow-sm flex items-center gap-1 hover:scale-105
 													${
 														complaint.status === "Resolved"
 														? "bg-green-100 text-green-700 border border-green-400 hover:bg-green-200"
@@ -353,7 +351,8 @@ const StudentHome: React.FC = () => {
 														: "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
 													}`}
 												>
-												{complaint.status}
+													{complaint.status}
+													<span className="text-gray-500 text-base ml-1">→</span>
 												</button>
 											</td>
 										</tr>
@@ -383,6 +382,12 @@ const StudentHome: React.FC = () => {
 			<div className="mt-8 transition-transform duration-300 hover:scale-105">
 				<HolidayBanner />
 			</div>
+			{selectedComplaintId && (
+				<ComplaintDetail
+					complaintId={selectedComplaintId}
+					onClose={() => setSelectedComplaintId(null)}
+				/>
+			)}
 		</div>
 		);
 		};

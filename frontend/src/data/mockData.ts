@@ -323,8 +323,8 @@ export interface StudentSummary {
   facilityCategory: string;
   dateSubmitted: string; // ISO or readable date string
   status: "Pending" | "In Progress" | "Resolved" | string;
-  location?: string;
-  roomNumber?: string;
+  location: string;
+  roomNumber: string;
 }
 
 export const studentSummaryData: StudentSummary[] = [
