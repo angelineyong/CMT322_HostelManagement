@@ -91,7 +91,7 @@ const Calendar: React.FC = () => {
 	};
 
 	return (
-		<div className="bg-white rounded-lg shadow p-4">
+		<div className="bg-white rounded-lg shadow p-4 transition-transform duration-300 hover:scale-105">
 			<div className="flex items-center justify-between mb-3">
 				<button onClick={prevMonth} className="px-2 py-1 rounded hover:bg-gray-100">◀</button>
 				<div className="text-lg font-medium">
@@ -256,7 +256,7 @@ const StudentHome: React.FC = () => {
 
 			{/* Top three summary boxes */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-9 mb-10">
-				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-amber-100">
+				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-amber-100 transition-transform duration-300 hover:scale-105">
 					<div className="flex items-center gap-10">
 						<img src={pendingIcon} alt="pending" className="w-12 h-12 rounded-md object-cover" />
 						<div>
@@ -266,7 +266,7 @@ const StudentHome: React.FC = () => {
 					</div>
 				</div>
 
-				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-blue-100">
+				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-blue-100 transition-transform duration-300 hover:scale-105">
 					<div className="flex items-center gap-10">
 						<img src={inProgressIcon} alt="in-progress" className="w-15 h-15 rounded-md object-cover" />
 						<div>
@@ -276,7 +276,7 @@ const StudentHome: React.FC = () => {
 					</div>
 				</div>
 
-				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-green-100">
+				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-green-100 transition-transform duration-300 hover:scale-105">
 					<div className="flex items-center gap-10">
 						<img src={resolvedIcon} alt="resolved" className="w-12 h-12 rounded-md object-cover" />
 						<div>
@@ -289,7 +289,7 @@ const StudentHome: React.FC = () => {
 
 			{/* Bottom area: left table, right calendar */}
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-				<div className="lg:col-span-2">
+				<div className="lg:col-span-2 transition-transform duration-300 hover:scale-105">
 					<div className="bg-white rounded-lg shadow p-7">
 						<div className="flex items-center justify-between mb-7">
 							<h2 className="text-2xl font-semibold">Recent Complaints</h2>
@@ -347,7 +347,7 @@ const StudentHome: React.FC = () => {
 
 				<div className="space-y-4">
 					{/* Staff status box above calendar */}
-					<div className="bg-white rounded-lg shadow p-4 flex items-center gap-4">
+					<div className="bg-white rounded-lg shadow p-4 flex items-center gap-4 transition-transform duration-300 hover:scale-105">
 						<div className={`w-3 h-3 rounded-full ${staffAvailability.statusType === "available" ? "bg-green-500" : staffAvailability.statusType === "out-of-office" ? "bg-yellow-500" : staffAvailability.statusType === "unavailable" ? "bg-red-500" : "bg-gray-400"}`} />
 						<div>
 							<div className="text-sm text-gray-500">Staff Status</div>
@@ -361,7 +361,7 @@ const StudentHome: React.FC = () => {
 			</div>
 
 			{/* Holiday banner component placed after Recent Complaints and Calendar */}
-			<div className="mt-8">
+			<div className="mt-8 transition-transform duration-300 hover:scale-105">
 				<HolidayBanner />
 			</div>
 		</div>

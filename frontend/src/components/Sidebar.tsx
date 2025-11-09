@@ -11,6 +11,7 @@ import {
   Ticket,
   House,
   BadgeAlert,
+  ClipboardClock,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../assets/CampusFix_Logo2.png";
@@ -37,8 +38,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: "Reports", icon: FileText, path: "/admin/reports" },
     { name: "Opened Ticket", icon: Ticket, path: "/admin/ticket" },
     { name: "User Management", icon: Users, path: "/admin/users" },
+
     { name: "Home", icon: House, path: "/student/" },
     { name: "Create Complaint", icon: BadgeAlert, path: "/student/complaint" },
+    { name: "Track Complaint", icon: ClipboardClock, path: "/student/track" },
   ];
 
   return (
