@@ -245,7 +245,7 @@ const StudentHome: React.FC = () => {
 			>
 				<div className="flex items-center justify-center gap-3 pt-25">
 					<div className="flex flex-col justify-center h-60">
-						<div className="text-9xl font-bold text-indigo-700 mb-2">Fixify</div>
+						<div className="text-9xl font-bold text-indigo-700 mb-5">Fixify</div>
 						<div className="text-1xl text-indigo-500 font-medium mb-20">Creating comfort through your feedback.</div>
 					</div>
 				</div>				

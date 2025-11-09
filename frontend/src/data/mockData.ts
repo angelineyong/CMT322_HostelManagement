@@ -325,21 +325,22 @@ export interface StudentSummary {
   status: "Pending" | "In Progress" | "Resolved" | string;
   location: string;
   roomNumber: string;
+  feedbackSubmitted: number|null; // null = not submitted, 0 = no, 1 = yes
 }
 
 export const studentSummaryData: StudentSummary[] = [
-  { complaintId: "C2025001", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-11-01", status: "Pending", location: "M06", roomNumber: "01-7A"},
-  { complaintId: "C2025002", facilityCategory: "Bathroom", dateSubmitted: "2025-10-28", status: "In Progress", location: "M06", roomNumber: "01-7A"},
-  { complaintId: "C2025003", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-25", status: "Resolved", location: "M06", roomNumber: "01-7A" },
-  { complaintId: "C2025004", facilityCategory: "Furniture", dateSubmitted: "2025-10-22", status: "In Progress", location: "M06", roomNumber: "01-7A" },
-  { complaintId: "C2025005", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-20", status: "Resolved", location: "M06", roomNumber: "01-7A" },
-  { complaintId: "C2025006", facilityCategory: "Bathroom", dateSubmitted: "2025-10-18", status: "Resolved", location: "M06", roomNumber: "01-7A" },
-  { complaintId: "C2025007", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-16", status: "Resolved", location: "M06", roomNumber: "01-7A" },
-  { complaintId: "C2025008", facilityCategory: "Furniture", dateSubmitted: "2025-10-14", status: "Resolved", location: "M06", roomNumber: "01-7A" },
-  { complaintId: "C2025009", facilityCategory: "Bathroom", dateSubmitted: "2025-10-12", status: "Resolved", location: "M06", roomNumber: "01-7A" },
-  { complaintId: "C2025010", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-10", status: "Resolved", location: "M06", roomNumber: "01-7A" },
-  { complaintId: "C2025011", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-08", status: "Resolved", location: "M06", roomNumber: "01-7A" },
-  { complaintId: "C2025012", facilityCategory: "Furniture", dateSubmitted: "2025-10-05", status: "Resolved", location: "M06", roomNumber: "01-7A" },
+  { complaintId: "C2025001", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-11-01", status: "Pending", location: "M06", roomNumber: "01-7A", feedbackSubmitted: null},
+  { complaintId: "C2025002", facilityCategory: "Bathroom", dateSubmitted: "2025-10-28", status: "In Progress", location: "M06", roomNumber: "01-7A", feedbackSubmitted: null},
+  { complaintId: "C2025003", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-25", status: "Resolved", location: "M06", roomNumber: "01-7A", feedbackSubmitted: 0 },
+  { complaintId: "C2025004", facilityCategory: "Furniture", dateSubmitted: "2025-10-22", status: "In Progress", location: "M06", roomNumber: "01-7A", feedbackSubmitted: null },
+  { complaintId: "C2025005", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-20", status: "Resolved", location: "M06", roomNumber: "01-7A" , feedbackSubmitted: 1},
+  { complaintId: "C2025006", facilityCategory: "Bathroom", dateSubmitted: "2025-10-18", status: "Resolved", location: "M06", roomNumber: "01-7A" , feedbackSubmitted: 1},
+  { complaintId: "C2025007", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-16", status: "Resolved", location: "M06", roomNumber: "01-7A" , feedbackSubmitted: 0},
+  { complaintId: "C2025008", facilityCategory: "Furniture", dateSubmitted: "2025-10-14", status: "Resolved", location: "M06", roomNumber: "01-7A" , feedbackSubmitted: 1},
+  { complaintId: "C2025009", facilityCategory: "Bathroom", dateSubmitted: "2025-10-12", status: "Resolved", location: "M06", roomNumber: "01-7A" , feedbackSubmitted: 1},
+  { complaintId: "C2025010", facilityCategory: "Ceiling Fan", dateSubmitted: "2025-10-10", status: "Resolved", location: "M06", roomNumber: "01-7A" , feedbackSubmitted: 1},
+  { complaintId: "C2025011", facilityCategory: "Electrical Socket", dateSubmitted: "2025-10-08", status: "Resolved", location: "M06", roomNumber: "01-7A" , feedbackSubmitted: 1},
+  { complaintId: "C2025012", facilityCategory: "Furniture", dateSubmitted: "2025-10-05", status: "Resolved", location: "M06", roomNumber: "01-7A" , feedbackSubmitted: 1},
 ];
 
 // Holidays for the student-facing banner

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { studentSummaryData } from "../../data/mockData";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check, X, Minus } from "lucide-react";
 import ComplaintDetail from "./ComplaintDetail";
 
 const TrackComplaint: React.FC = () => {
@@ -90,12 +90,13 @@ const TrackComplaint: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse">
             <thead>
-              <tr className="text-left text-gray-600 border-b border-gray-300 bg-transparent">
+              <tr className="text-left text-indigo-700 border-b border-gray-300 bg-transparent">
                 <th className="pb-3">Complaint ID</th>
                 <th className="pb-3">Facility Category</th>
                 <th className="pb-3">Location / Room</th>
                 <th className="pb-3">Date Submitted</th>
                 <th className="pb-3">Status</th>
+                <th className="pb-3">Feedback</th>
               </tr>
             </thead>
 
@@ -103,7 +104,7 @@ const TrackComplaint: React.FC = () => {
               {filteredAndSortedComplaints.map((complaint) => (
                 <tr
                   key={complaint.complaintId}
-                  className="border-b hover:bg-gray-50 hover:scale-[1.02] transform transition-all duration-200 cursor-default"
+                  className="text-sm border-b hover:bg-indigo-50 hover:scale-[1.02] transform transition-all duration-200 cursor-default"
                 >
                   <td className="py-3">{complaint.complaintId}</td>
                   <td className="py-3">{complaint.facilityCategory}</td>
@@ -133,6 +134,17 @@ const TrackComplaint: React.FC = () => {
                       </span>
                     </button>
                   </td>
+
+                  {/* Feedback Status */}
+                  <td className="py-5">
+                    {complaint.feedbackSubmitted === 1 ? (
+                      <Check className="w-5 h-5 text-green-600 inline" />
+                    ) : complaint.feedbackSubmitted === 0 ? (
+                      <X className="w-5 h-5 text-red-500 inline" />
+                    ) : (
+                      <Minus className="w-5 h-5 text-gray-400 inline" />
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -140,7 +152,7 @@ const TrackComplaint: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Popup */}
+      {/* Complaint Detail Modal Popup */}
       {selectedComplaintId && (
         <ComplaintDetail
           complaintId={selectedComplaintId}
