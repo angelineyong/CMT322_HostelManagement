@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { studentSummaryData } from "../../data/mockData";
 import { Pickaxe, MessageSquare, Image as ImageIcon, MessageCircle, ChevronDown, ChevronUp} from "lucide-react";
 import samplePhoto from "../../assets/SampleFix.jpg";
+import FeedbackForm from "./FeedbackForm";
 
 interface ComplaintDetailProps {
   complaintId: string | null;
@@ -48,6 +49,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
 
   const [showComment, setShowComment] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false)
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
 
   if (!complaint) {
     return (
@@ -77,17 +79,17 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
   return (
     <div className="fixed inset-0 bg-transparent bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       {/* Modal container with scroll and max height */}
-      <div className="relative bg-white backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200 w-full max-w-3xl animate-[fadeIn_0.3s_ease-out] max-h-[80vh] overflow-y-auto">
-        {/* Inner scrollable content */}
-        <div className="p-8">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-4 text-gray-600 hover:text-gray-800 text-2xl font-bold"
-          >
-            &times;
-          </button>
+      <div className="relative bg-white backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200 w-full max-w-3xl animate-[fadeIn_0.3s_ease-out] max-h-[80vh]">
+        {/* Close button */}
+         <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-50 text-gray-600 hover:text-gray-800 text-2xl font-bold"
+        >
+          &times;
+        </button>
 
+        {/* Inner scrollable content */}
+        <div className="p-8 max-h-[80vh] overflow-y-auto">
           {/* Title */}
           <h1 className="text-3xl font-bold text-indigo-700 mb-9 text-center">
             Track Complaint
@@ -229,7 +231,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                     {isActive && step.label === "Feedback" && (
                       <div className="mt-3 ml-1">
                         <button
-                          onClick={() => alert("Navigate to feedback form...")}
+                          onClick={() => setShowFeedbackForm(true)}
                           className="mt-2 flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-all duration-200 shadow-md"
                         >
                           <MessageCircle className="w-4 h-4" />
@@ -244,6 +246,19 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
           </div>
         </div>
       </div>
+      {showFeedbackForm && (
+      <FeedbackForm
+        complaintId={complaint.complaintId}
+        onClose={() => setShowFeedbackForm(false)}
+        onSubmit={(complaintId, feedback, rating) => {
+          console.log("Feedback submitted for:", complaintId);
+          console.log("Rating:", rating);
+          console.log("Feedback:", feedback);
+          alert("Thank you for your feedback!");
+          setShowFeedbackForm(false);
+        }}
+      />
+    )}
     </div>
   );
 };

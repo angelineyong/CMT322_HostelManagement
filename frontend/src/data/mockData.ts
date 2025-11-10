@@ -163,6 +163,11 @@ export interface Feedback {
   student: string;
   rating: number; // Out of 5
   comments: string;
+  description: string
+  location: string,
+  roomNumber: string,
+  assignmentGroup: string,
+  dateSubmitted: string,
 }
 
 export interface RatingTrend {
@@ -183,18 +188,33 @@ export const staffPerformanceData: StaffPerformance[] = [
         student: "Alice Lim",
         rating: 5,
         comments: "Great service, very prompt!",
+        description: "Leaky faucet in bathroom",
+        location: "M06",
+        roomNumber: "01-7A",
+        assignmentGroup: "Toilet",
+        dateSubmitted: "2025-05-02",
       },
       {
         complaintId: "TASK10002",
         student: "Brian Tan",
-        rating: 4,
+        rating: 2.7,
         comments: "Good response but slightly delayed.",
+        description: "Fan not working",
+        location: "M05",
+        roomNumber: "03-29B",
+        assignmentGroup: "Ceiling Fan",
+        dateSubmitted: "2025-05-05",
       },
       {
         complaintId: "TASK10003",
         student: "Cindy Wong",
-        rating: 4,
+        rating: 4.2,
         comments: "Resolved efficiently.",
+        description: "Broken locker door",
+        location: "K05",
+        roomNumber: "03-26B",
+        assignmentGroup: "Door",
+        dateSubmitted: "2025-05-07",
       },
     ],
     ratingTrend: [
@@ -218,12 +238,22 @@ export const staffPerformanceData: StaffPerformance[] = [
         student: "David Ng",
         rating: 5,
         comments: "Excellent!",
+        description: "",
+        location: "",
+        roomNumber: "",
+        assignmentGroup: "",
+        dateSubmitted: "",
       },
       {
         complaintId: "TASK10012",
         student: "Emily Tan",
         rating: 4,
         comments: "Good service.",
+        description: "",
+        location: "",
+        roomNumber: "",
+        assignmentGroup: "",
+        dateSubmitted: "",
       },
     ],
     ratingTrend: [
