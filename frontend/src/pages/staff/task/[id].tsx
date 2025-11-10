@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { sendFeedbackEmail } from "../../../components/Email";
 import {
   taskCategoryMap,
   groupOptions,
@@ -49,18 +50,33 @@ export default function TaskDetailPage() {
     alert("Changes applied successfully!");
   };
 
-  const handleResolveSubmit = () => {
-    if (uploadedFiles.length === 0) {
-      alert("Please upload at least one photo as evidence.");
-      return;
-    }
-    // Set status to Closed Complete
-    setEditableTask((prev) =>
-      prev ? { ...prev, status: "Closed Complete" } : prev
-    );
-    setShowResolveModal(false);
-    alert(`Incident ${editableTask?.id} resolved!`);
-  };
+ const handleResolveSubmit = async () => {
+  if (uploadedFiles.length === 0) {
+    alert("Please upload at least one photo as evidence.");
+    return;
+  }
+
+  // Set status to Closed Complete
+  setEditableTask((prev) =>
+    prev ? { ...prev, status: "Closed Complete" } : prev
+  );
+  setShowResolveModal(false);
+
+  // Send feedback email
+  const success = await sendFeedbackEmail({
+    user_name: editableTask?.openedBy || "Customer",
+    service_id: editableTask?.id,
+    feedback_link: "http://localhost:5173/",
+    to_email: editableTask?.email || "tkjun7559@gmail.com",
+  });
+
+  if (success) {
+    alert(`Incident ${editableTask?.id} resolved and email sent successfully!`);
+  } else {
+    alert(`Incident ${editableTask?.id} resolved but failed to send email.`);
+  }
+};
+
 
   // File change handler
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

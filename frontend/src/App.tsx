@@ -13,6 +13,7 @@ export default function App() {
           isSidebarOpen ? "ml-64" : "ml-20"
         }`}
       >
+        {/* existing app routes */}
         <AppRouter />
       </main>
     </div>

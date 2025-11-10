@@ -12,4 +12,5 @@ export interface Task {
   openedAt: string;
   openedBy: string;
   status: string;
+  email?: string;
 }
