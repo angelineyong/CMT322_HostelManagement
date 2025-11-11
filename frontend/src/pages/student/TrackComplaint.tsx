@@ -2,11 +2,20 @@ import React, { useState, useMemo } from "react";
 import { studentSummaryData } from "../../data/mockData";
 import { ArrowRight, Check, X, Minus } from "lucide-react";
 import ComplaintDetail from "./ComplaintDetail";
+import FeedbackForm from "./FeedbackForm";
 
 const TrackComplaint: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
+  const [feedbackComplaintId, setFeedbackComplaintId] = useState<string | null>(null);
+
+    // Feedback submission handler
+  const handleFeedbackSubmit = (complaintId: string, feedback: string, rating: number) => {
+    console.log("Feedback submitted:", { complaintId, feedback, rating });
+    alert(`Thank you for your feedback on ${complaintId}!`);
+    // update backend or mock state here later
+  };
 
   // Filter + sort complaints
   const filteredAndSortedComplaints = useMemo(() => {
@@ -54,9 +63,15 @@ const TrackComplaint: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-10">
-      <h1 className="text-4xl font-bold text-indigo-700 mb-10">
+      <h1 className="text-4xl font-bold text-indigo-700 mb-8">
         Complaint History
       </h1>
+
+      <div className="flex justify-end mb-2">
+          <p className="text-sm text-black italic">
+              Tap the <span className="text-red-500 font-semibold">'X'</span> under <span className="font-medium text-indigo-700">Feedback</span> to rate and comment on your complaint resolution.
+          </p>
+      </div>
 
       <div className="bg-white rounded-2xl shadow p-8 transition-transform duration-300 hover:scale-[1.01]">
         {/* Search and Sort Controls */}
@@ -104,7 +119,7 @@ const TrackComplaint: React.FC = () => {
               {filteredAndSortedComplaints.map((complaint) => (
                 <tr
                   key={complaint.complaintId}
-                  className="text-sm border-b hover:bg-indigo-50 hover:scale-[1.02] transform transition-all duration-200 cursor-default"
+                  className="text-sm hover:bg-indigo-50 hover:scale-[1.02] transform transition-all duration-200 cursor-default"
                 >
                   <td className="py-3">{complaint.complaintId}</td>
                   <td className="py-3">{complaint.facilityCategory}</td>
@@ -135,12 +150,18 @@ const TrackComplaint: React.FC = () => {
                     </button>
                   </td>
 
-                  {/* Feedback Status */}
+                  {/* Feedback Column */}
                   <td className="py-5">
                     {complaint.feedbackSubmitted === 1 ? (
                       <Check className="w-5 h-5 text-green-600 inline" />
                     ) : complaint.feedbackSubmitted === 0 ? (
-                      <X className="w-5 h-5 text-red-500 inline" />
+                      <button
+                        onClick={() => setFeedbackComplaintId(complaint.complaintId)}
+                        className="hover:scale-110 transition-transform"
+                        title="Click to give feedback"
+                      >
+                        <X className="w-5 h-5 text-red-500 inline" />
+                      </button>
                     ) : (
                       <Minus className="w-5 h-5 text-gray-400 inline" />
                     )}
@@ -157,6 +178,15 @@ const TrackComplaint: React.FC = () => {
         <ComplaintDetail
           complaintId={selectedComplaintId}
           onClose={() => setSelectedComplaintId(null)}
+        />
+      )}
+
+        {/* Feedback Form Modal Popup */}
+        {feedbackComplaintId && (
+        <FeedbackForm
+          complaintId={feedbackComplaintId}
+          onClose={() => setFeedbackComplaintId(null)}
+          onSubmit={handleFeedbackSubmit}
         />
       )}
     </div>
