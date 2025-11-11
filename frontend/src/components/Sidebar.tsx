@@ -16,7 +16,7 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/CampusFix_Logo2.png";
 import userAvatar from "../assets/userAvatar.png";
-import { logout } from "../utils/auth";
+import { logout } from "../../utils/auth";
 
 // ✅ Define prop types for Sidebar
 interface SidebarProps {
