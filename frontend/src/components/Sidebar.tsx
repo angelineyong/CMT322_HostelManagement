@@ -13,9 +13,10 @@ import {
   BadgeAlert,
   ClipboardClock,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/CampusFix_Logo2.png";
 import userAvatar from "../assets/userAvatar.png";
+import { logout } from "../utils/auth";
 
 // ✅ Define prop types for Sidebar
 interface SidebarProps {
@@ -25,6 +26,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, path: "/staff/" },
@@ -150,6 +152,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         {/* 🔹 Logout Button */}
         <div className="px-3 pb-5 border-t border-white/30">
           <button
+            onClick={() => {
+              logout();
+              navigate("/auth/login");
+            }}
             className="flex items-center gap-3 px-3 py-2 w-full rounded-lg 
                        hover:bg-red-100/40 text-red-600 transition-colors duration-200"
           >
