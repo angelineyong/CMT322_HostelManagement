@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCurrentUser } from "../../utils/auth";
+import { getCurrentUser } from "../../../utils/auth";
 
 type StaffStatus = "active" | "inactive";
 
@@ -310,3 +310,4 @@ export default function UsersManagement() {
     </div>
   );
 }
+
