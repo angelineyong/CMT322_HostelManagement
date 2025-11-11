@@ -1,202 +1,155 @@
-/* LocalStorage-based auth and staff management utilities */
+/**
+ * LocalStorage-based Auth utilities.
+ * This is a simple front-end only implementation for demo/MVP.
+ */
 
 export type UserRole = "student" | "admin";
 
 export interface User {
-  email: string;
-  password: string; // demo-only (plain text for simplicity)
-  role: UserRole;
-  address?: string; // required when role === "student"
-  createdAt: string;
-}
-
-export type StaffStatus = "active" | "inactive";
-
-export interface StaffProfile {
   id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  position?: string;
-  department?: string;
-  status: StaffStatus;
-  createdAt: string;
-}
-
-const USERS_KEY = "hm_users";
-const CURRENT_USER_KEY = "hm_current_user";
-const STAFF_PROFILES_KEY = "hm_staff_profiles";
-
-/* ---------- Generic helpers ---------- */
-
-function readJSON<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw);
-    return parsed as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJSON<T>(key: string, value: T): void {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function genId(prefix = "id"): string {
-  const rand = Math.random().toString(36).slice(2, 8);
-  const ts = Date.now().toString(36);
-  return `${prefix}_${ts}_${rand}`;
-}
-
-/* ---------- Users ---------- */
-
-export function getUsers(): User[] {
-  return readJSON<User[]>(USERS_KEY, []);
-}
-
-export function saveUsers(users: User[]): void {
-  writeJSON<User[]>(USERS_KEY, users);
-}
-
-export function findUserByEmail(email: string): User | undefined {
-  return getUsers().find((u) => u.email.toLowerCase() === email.toLowerCase());
-}
-
-export function registerUser(input: {
   email: string;
   password: string;
   role: UserRole;
   address?: string;
-}): { ok: true } | { ok: false; error: string } {
-  const email = input.email.trim();
-  const password = input.password.trim();
-  const role = input.role;
-  const address = input.address?.trim();
+}
 
-  if (!email) return { ok: false, error: "Email is required." };
-  if (!/\S+@\S+\.\S+/.test(email)) return { ok: false, error: "Invalid email format." };
-  if (!password || password.length < 6)
+type AuthResult =
+  | { ok: true; user: User }
+  | { ok: false; error: string };
+
+const USERS_KEY = "hm_users";
+const CURRENT_USER_KEY = "hm_current_user";
+
+function loadUsers(): User[] {
+  try {
+    const raw = localStorage.getItem(USERS_KEY);
+    return raw ? (JSON.parse(raw) as User[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUsers(users: User[]) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function setCurrentUser(user: User) {
+  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+}
+
+export function getCurrentUser(): User | null {
+  try {
+    const raw = localStorage.getItem(CURRENT_USER_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
+function isValidEmail(email: string) {
+  // Simple email regex for demo
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function genId() {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Register a new user.
+ * - Unique email required
+ * - Password length >= 6
+ * - If role === "student", address is required
+ */
+export function registerUser(params: {
+  email: string;
+  password: string;
+  role: UserRole;
+  address?: string;
+}): AuthResult {
+  const { email, password, role, address } = params;
+
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Invalid email format." };
+  }
+  if ((password ?? "").length < 6) {
     return { ok: false, error: "Password must be at least 6 characters." };
-  if (role !== "student" && role !== "admin")
-    return { ok: false, error: "Role must be student or admin." };
-  if (role === "student" && !address)
-    return { ok: false, error: "Address is required for student." };
-
-  const existing = findUserByEmail(email);
-  if (existing) {
-    return { ok: false, error: "Email already registered." };
+  }
+  if (role === "student" && !address) {
+    return { ok: false, error: "Address is required for student role." };
   }
 
-  const users = getUsers();
-  users.push({
+  const users = loadUsers();
+  const exists = users.some((u) => u.email.toLowerCase() === email.toLowerCase());
+  if (exists) {
+    return { ok: false, error: "Email is already registered." };
+  }
+
+  const user: User = {
+    id: genId(),
     email,
     password,
     role,
-    address,
-    createdAt: new Date().toISOString(),
-  });
+    address: role === "student" ? address : undefined,
+  };
+  users.push(user);
   saveUsers(users);
-  return { ok: true };
+  return { ok: true, user };
 }
 
-export function login(email: string, password: string): { ok: true; user: User } | { ok: false; error: string } {
-  const user = findUserByEmail(email.trim());
-  if (!user) return { ok: false, error: "User not found." };
-  if (user.password !== password.trim()) return { ok: false, error: "Incorrect password." };
+/**
+ * Login by email & password.
+ * Sets current user on success.
+ */
+export function login(email: string, password: string): AuthResult {
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Invalid email format." };
+  }
+  const users = loadUsers();
+  const user = users.find(
+    (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+  );
+  if (!user) {
+    return { ok: false, error: "Invalid email or password." };
+  }
   setCurrentUser(user);
   return { ok: true, user };
 }
 
-export function logout(): void {
-  localStorage.removeItem(CURRENT_USER_KEY);
-}
-
-export function getCurrentUser(): User | null {
-  return readJSON<User | null>(CURRENT_USER_KEY, null);
-}
-
-export function setCurrentUser(user: User): void {
-  writeJSON<User>(CURRENT_USER_KEY, user);
-}
-
-export function resetPassword(email: string, newPassword: string): { ok: true } | { ok: false; error: string } {
-  const trimmedEmail = email.trim();
-  const trimmedPwd = newPassword.trim();
-  if (!trimmedEmail) return { ok: false, error: "Email is required." };
-  if (!trimmedPwd || trimmedPwd.length < 6)
+/**
+ * Reset password for an existing account.
+ */
+export function resetPassword(email: string, newPassword: string): AuthResult {
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Invalid email format." };
+  }
+  if ((newPassword ?? "").length < 6) {
     return { ok: false, error: "New password must be at least 6 characters." };
-
-  const users = getUsers();
-  const idx = users.findIndex((u) => u.email.toLowerCase() === trimmedEmail.toLowerCase());
-  if (idx < 0) return { ok: false, error: "User not found." };
-  users[idx] = { ...users[idx], password: trimmedPwd };
+  }
+  const users = loadUsers();
+  const idx = users.findIndex((u) => u.email.toLowerCase() === email.toLowerCase());
+  if (idx === -1) {
+    return { ok: false, error: "Email not found." };
+  }
+  users[idx] = { ...users[idx], password: newPassword };
   saveUsers(users);
-  return { ok: true };
+
+  // If resetting currently logged-in user, update session too
+  const current = getCurrentUser();
+  if (current && current.email.toLowerCase() === email.toLowerCase()) {
+    setCurrentUser(users[idx]);
+  }
+
+  return { ok: true, user: users[idx] };
 }
 
-/* ---------- Staff Profiles (Admin) ---------- */
-
-export function getStaffProfiles(): StaffProfile[] {
-  return readJSON<StaffProfile[]>(STAFF_PROFILES_KEY, []);
-}
-
-export function saveStaffProfiles(list: StaffProfile[]): void {
-  writeJSON<StaffProfile[]>(STAFF_PROFILES_KEY, list);
-}
-
-export function addStaffProfile(input: {
-  name: string;
-  email: string;
-  phone?: string;
-  position?: string;
-  department?: string;
-  status?: StaffStatus;
-}): { ok: true; profile: StaffProfile } | { ok: false; error: string } {
-  const name = input.name.trim();
-  const email = input.email.trim();
-  const phone = input.phone?.trim();
-  const position = input.position?.trim();
-  const department = input.department?.trim();
-  const status: StaffStatus = input.status ?? "active";
-
-  if (!name) return { ok: false, error: "Name is required." };
-  if (!email) return { ok: false, error: "Email is required." };
-  if (!/\S+@\S+\.\S+/.test(email)) return { ok: false, error: "Invalid email format." };
-
-  const list = getStaffProfiles();
-  const duplicate = list.find((p) => p.email.toLowerCase() === email.toLowerCase());
-  if (duplicate) return { ok: false, error: "Staff with this email already exists." };
-
-  const profile: StaffProfile = {
-    id: genId("staff"),
-    name,
-    email,
-    phone,
-    position,
-    department,
-    status,
-    createdAt: new Date().toISOString(),
-  };
-  list.push(profile);
-  saveStaffProfiles(list);
-  return { ok: true, profile };
-}
-
-export function toggleStaffProfileStatus(id: string): StaffProfile[] {
-  const list = getStaffProfiles();
-  const next: StaffProfile[] = list.map((p) =>
-    p.id === id
-      ? { ...p, status: (p.status === "active" ? "inactive" : "active") as StaffStatus }
-      : p
-  );
-  saveStaffProfiles(next);
-  return next;
-}
-
-export function deleteStaffProfile(id: string): StaffProfile[] {
-  const next: StaffProfile[] = getStaffProfiles().filter((p) => p.id !== id);
-  saveStaffProfiles(next);
-  return next;
+/**
+ * Logout: clears current session.
+ */
+export function logout(): void {
+  try {
+    localStorage.removeItem(CURRENT_USER_KEY);
+  } catch {
+    // ignore
+  }
 }
