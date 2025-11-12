@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCurrentUser } from "../../../utils/auth";
+import { getCurrentUser, registerUser } from "../../../utils/auth";
 
 type StaffStatus = "active" | "inactive";
 
@@ -41,6 +41,7 @@ export default function UsersManagement() {
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [position, setPosition] = useState("");
   const [department, setDepartment] = useState("");
@@ -84,10 +85,21 @@ export default function UsersManagement() {
       setErr("Invalid staff email format.");
       return;
     }
+    if ((password ?? "").length < 6) {
+      setErr("Password must be at least 6 characters.");
+      return;
+    }
 
     const exists = staffList.some((s) => s.email.toLowerCase() === email.toLowerCase());
     if (exists) {
       setErr("A staff with this email already exists.");
+      return;
+    }
+
+    // Create login account for staff
+    const reg = registerUser({ email: email.trim(), password: password.trim(), role: "staff" });
+    if (!reg.ok) {
+      setErr(reg.error);
       return;
     }
 
@@ -104,9 +116,10 @@ export default function UsersManagement() {
     const next = [...staffList, profile];
     setStaffList(next);
     saveStaff(next);
-    setOkMsg("Staff profile created.");
+    setOkMsg("Staff profile and login account created.");
     setFullName("");
     setEmail("");
+    setPassword("");
     setPhone("");
     setPosition("");
     setDepartment("");
@@ -180,6 +193,19 @@ export default function UsersManagement() {
               placeholder="staff@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Set a secure password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
               required
             />
           </div>
@@ -310,4 +336,3 @@ export default function UsersManagement() {
     </div>
   );
 }
-
