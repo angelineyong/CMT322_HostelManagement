@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { studentSummaryData } from "../../data/mockData";
 import { ArrowRight, Check, X, Minus } from "lucide-react";
 import ComplaintDetail from "./ComplaintDetail";
@@ -9,12 +10,31 @@ const TrackComplaint: React.FC = () => {
   const [sortBy, setSortBy] = useState("");
   const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
   const [feedbackComplaintId, setFeedbackComplaintId] = useState<string | null>(null);
+  const [feedbackData, setFeedbackData] = useState<{ [key: string]: { stars: number; comment: string } }>({});
 
-    // Feedback submission handler
+  // Get feedbackId from URL query (when user clicks feedback link from email)
+  const [searchParams] = useSearchParams();
+  const feedbackId = searchParams.get("feedbackId");
+
+  // Auto-open feedback form if feedbackId exists in URL
+  useEffect(() => {
+    if (feedbackId) {
+      setFeedbackComplaintId(feedbackId);
+      window.history.replaceState({}, "", "/student/track");
+    }
+  }, [feedbackId]);
+
+  // Handle feedback submission
   const handleFeedbackSubmit = (complaintId: string, feedback: string, rating: number) => {
     console.log("Feedback submitted:", { complaintId, feedback, rating });
-    alert(`Thank you for your feedback on ${complaintId}!`);
-    // update backend or mock state here later
+
+    // Save feedback in local state
+    setFeedbackData((prev) => ({
+      ...prev,
+      [complaintId]: { stars: rating, comment: feedback },
+    }));
+
+    // alert(`Thank you for your feedback on ${complaintId}!`);
   };
 
   // Filter + sort complaints
@@ -37,21 +57,17 @@ const TrackComplaint: React.FC = () => {
       case "date-asc":
         result.sort(
           (a, b) =>
-            new Date(a.dateSubmitted).getTime() -
-            new Date(b.dateSubmitted).getTime()
+            new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
         );
         break;
       case "date-desc":
         result.sort(
           (a, b) =>
-            new Date(b.dateSubmitted).getTime() -
-            new Date(a.dateSubmitted).getTime()
+            new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime()
         );
         break;
       case "category":
-        result.sort((a, b) =>
-          a.facilityCategory.localeCompare(b.facilityCategory)
-        );
+        result.sort((a, b) => a.facilityCategory.localeCompare(b.facilityCategory));
         break;
       case "status":
         result.sort((a, b) => a.status.localeCompare(b.status));
@@ -63,14 +79,14 @@ const TrackComplaint: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-10">
-      <h1 className="text-4xl font-bold text-indigo-700 mb-8">
-        Complaint History
-      </h1>
+      <h1 className="text-4xl font-bold text-indigo-700 mb-8">Complaint History</h1>
 
       <div className="flex justify-end mb-2">
-          <p className="text-sm text-black italic">
-              Tap the <span className="text-red-500 font-semibold">'X'</span> under <span className="font-medium text-indigo-700">Feedback</span> to rate and comment on your complaint resolution.
-          </p>
+        <p className="text-sm text-black italic">
+          Tap the <span className="text-red-500 font-semibold">'X'</span> under{" "}
+          <span className="font-medium text-indigo-700">Feedback</span> to rate and
+          comment on your complaint resolution.
+        </p>
       </div>
 
       <div className="bg-white rounded-2xl shadow p-8 transition-transform duration-300 hover:scale-[1.01]">
@@ -128,7 +144,7 @@ const TrackComplaint: React.FC = () => {
                   </td>
                   <td className="py-3">{complaint.dateSubmitted}</td>
 
-                  {/* Status button */}
+                  {/* Status Button */}
                   <td className="py-3">
                     <button
                       onClick={() => setSelectedComplaintId(complaint.complaintId)}
@@ -153,7 +169,13 @@ const TrackComplaint: React.FC = () => {
                   {/* Feedback Column */}
                   <td className="py-5">
                     {complaint.feedbackSubmitted === 1 ? (
-                      <Check className="w-5 h-5 text-green-600 inline" />
+                      <button
+                        onClick={() => setFeedbackComplaintId(complaint.complaintId)}
+                        className="hover:scale-110 transition-transform"
+                        title="View feedback"
+                      >
+                        <Check className="w-5 h-5 text-green-600 inline" />
+                      </button>
                     ) : complaint.feedbackSubmitted === 0 ? (
                       <button
                         onClick={() => setFeedbackComplaintId(complaint.complaintId)}
@@ -173,7 +195,7 @@ const TrackComplaint: React.FC = () => {
         </div>
       </div>
 
-      {/* Complaint Detail Modal Popup */}
+      {/* Complaint Detail Modal */}
       {selectedComplaintId && (
         <ComplaintDetail
           complaintId={selectedComplaintId}
@@ -181,14 +203,24 @@ const TrackComplaint: React.FC = () => {
         />
       )}
 
-        {/* Feedback Form Modal Popup */}
-        {feedbackComplaintId && (
-        <FeedbackForm
-          complaintId={feedbackComplaintId}
-          onClose={() => setFeedbackComplaintId(null)}
-          onSubmit={handleFeedbackSubmit}
-        />
-      )}
+     {/* Feedback Form Modal */}
+    {feedbackComplaintId && (
+      <FeedbackForm
+        complaintId={feedbackComplaintId}
+        onClose={() => setFeedbackComplaintId(null)}
+        onSubmit={handleFeedbackSubmit}
+        existingFeedback={
+          // First check local state (newly submitted feedback), else check mock data
+          feedbackData[feedbackComplaintId] ||
+          studentSummaryData.find(c => c.complaintId === feedbackComplaintId && c.feedbackSubmitted === 1)
+            ? {
+                stars: studentSummaryData.find(c => c.complaintId === feedbackComplaintId)?.feedbackStars || 0,
+                comment: studentSummaryData.find(c => c.complaintId === feedbackComplaintId)?.feedbackComment || "",
+              }
+            : undefined
+        }
+      />
+    )}
     </div>
   );
 };

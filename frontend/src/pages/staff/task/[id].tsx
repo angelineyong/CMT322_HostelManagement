@@ -66,7 +66,7 @@ export default function TaskDetailPage() {
   const success = await sendFeedbackEmail({
     user_name: editableTask?.openedBy || "Customer",
     service_id: editableTask?.id,
-    feedback_link: "http://localhost:5173/",
+    feedback_link: `http://localhost:5173/student/track?feedbackId=${editableTask?.id}`,
     to_email: editableTask?.email || "tkjun7559@gmail.com",
   });
 
