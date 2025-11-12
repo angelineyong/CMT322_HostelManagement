@@ -37,9 +37,9 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       path: "/staff/performance",
     },
     { name: "Dashboard", icon: BarChart3, path: "/admin/dashboard" },
-    { name: "Reports", icon: FileText, path: "/admin/reports" },
-    { name: "Opened Ticket", icon: Ticket, path: "/admin/ticket" },
-    { name: "User Management", icon: Users, path: "/admin/users" },
+    // { name: "Reports", icon: FileText, path: "/admin/reports" },
+    // { name: "Opened Ticket", icon: Ticket, path: "/admin/ticket" },
+    { name: "User Management", icon: Users, path: "/admin/userManagement" },
 
     { name: "Home", icon: House, path: "/student/" },
     { name: "Create Complaint", icon: BadgeAlert, path: "/student/complaint" },

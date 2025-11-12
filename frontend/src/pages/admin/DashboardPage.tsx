@@ -37,7 +37,9 @@ export default function DashboardPage() {
       c.openedAt.toLowerCase().includes(search) ||
       (c.closedAt && c.closedAt.toLowerCase().includes(search));
 
-    const matchesFacility = selectedFacility ? c.facility === selectedFacility : true;
+    const matchesFacility = selectedFacility
+      ? c.facility === selectedFacility
+      : true;
     const matchesStaff = selectedStaff ? c.assignedTo === selectedStaff : true;
 
     return matchesSearch && matchesFacility && matchesStaff;
@@ -48,14 +50,16 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-purple-700 mb-1">Facility & Ticket Insights</h1>
+          <h1 className="text-2xl font-bold text-purple-700 mb-1">
+            Facility & Ticket Insights
+          </h1>
           <p className="text-gray-600 text-xs">
             Manage and analyze hostel facility feedback to improve services.
           </p>
         </div>
         {/* Admin quick entry to Staff Profile Management */}
         <Link
-          to="/admin/users"
+          to="/admin/userManagement"
           className="text-sm px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
         >
           Manage Staff Profiles
@@ -65,7 +69,9 @@ export default function DashboardPage() {
       {/* Subtitle + Separator */}
       <div className="mb-4">
         <hr className="border-t border-gray-300 mb-2" />
-        <h2 className="text-lg font-semibold text-purple-700">Insights &amp; Reports</h2>
+        <h2 className="text-lg font-semibold text-purple-700">
+          Insights &amp; Reports
+        </h2>
         <hr className="border-t border-gray-300 mt-2" />
       </div>
       {/* --- Top Row: Insight Cards --- */}
@@ -100,9 +106,15 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Facility Issues */}
         <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-          <h2 className="text-md font-semibold text-purple-700 mb-4">Most Frequent Facility Issues</h2>
+          <h2 className="text-md font-semibold text-purple-700 mb-4">
+            Most Frequent Facility Issues
+          </h2>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={facilityIssues} layout="vertical" margin={{ left: 20 }}>
+            <BarChart
+              data={facilityIssues}
+              layout="vertical"
+              margin={{ left: 20 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" fontSize={14} />
               <YAxis
@@ -115,16 +127,26 @@ export default function DashboardPage() {
                 textAnchor="end"
               />
               <Tooltip formatter={(value: number) => `${value} tickets`} />
-              <Bar dataKey="count" name="Count" fill="#facc15" radius={[0, 8, 8, 0]} />
+              <Bar
+                dataKey="count"
+                name="Count"
+                fill="#facc15"
+                radius={[0, 8, 8, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Right: Complaint & Satisfaction Trend */}
         <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-          <h2 className="text-md font-semibold text-purple-700 mb-4">Complaint &amp; Satisfaction Trend</h2>
+          <h2 className="text-md font-semibold text-purple-700 mb-4">
+            Complaint &amp; Satisfaction Trend
+          </h2>
           <ResponsiveContainer width="105%" height={250}>
-            <LineChart data={trendData} margin={{ top: 5, right: 40, left: 0, bottom: 5 }}>
+            <LineChart
+              data={trendData}
+              margin={{ top: 5, right: 40, left: 0, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" fontSize={14} />
               <YAxis
@@ -158,11 +180,27 @@ export default function DashboardPage() {
               />
               <Tooltip
                 formatter={(value: number, name: string) =>
-                  name === "complaints" ? `${value} tickets` : (value as number).toFixed(1)
+                  name === "complaints"
+                    ? `${value} tickets`
+                    : (value as number).toFixed(1)
                 }
               />
-              <Line yAxisId="left" type="monotone" dataKey="complaints" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} />
-              <Line yAxisId="right" type="monotone" dataKey="satisfaction" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="complaints"
+                stroke="#ef4444"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+              />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="satisfaction"
+                stroke="#10b981"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -173,24 +211,37 @@ export default function DashboardPage() {
         {/* Subtitle + Separator */}
         <div className="mb-4">
           <hr className="border-t border-gray-300 mb-2" />
-          <h2 className="text-lg font-semibold text-purple-700">Staff Performance Analytics</h2>
+          <h2 className="text-lg font-semibold text-purple-700">
+            Staff Performance Analytics
+          </h2>
           <hr className="border-t border-gray-300 mt-2" />
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-          <h2 className="text-md font-semibold text-purple-700 mb-4">Tasks Assigned per Staff</h2>
+          <h2 className="text-md font-semibold text-purple-700 mb-4">
+            Tasks Assigned per Staff
+          </h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={staffTaskData} margin={{ top: 5, bottom: 5 }}>
               <XAxis dataKey="staffName" fontSize={14} />
               <YAxis />
               <Tooltip
-                formatter={(value: number, name) => (name === "tasksInHand" ? `${value} tasks` : value)}
+                formatter={(value: number, name) =>
+                  name === "tasksInHand" ? `${value} tasks` : value
+                }
                 labelFormatter={(label) => {
-                  const staff = staffTaskData.find((s) => s.staffName === label);
+                  const staff = staffTaskData.find(
+                    (s) => s.staffName === label
+                  );
                   return `Oldest ticket: ${staff?.oldestTicketDays} day(s)`;
                 }}
               />
-              <Bar dataKey="tasksInHand" name="Task in hand" fill="#7c3aed" radius={[8, 8, 0, 0]} />
+              <Bar
+                dataKey="tasksInHand"
+                name="Task in hand"
+                fill="#7c3aed"
+                radius={[8, 8, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -198,15 +249,25 @@ export default function DashboardPage() {
 
       {/* --- Staff Performance Table --- */}
       <div className="mt-6 bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-        <h2 className="text-md font-semibold text-purple-700 mb-4">Performance Rating</h2>
+        <h2 className="text-md font-semibold text-purple-700 mb-4">
+          Performance Rating
+        </h2>
         <div className="overflow-x-auto rounded-md">
           <table className="min-w-full border border-gray-200 rounded-lg">
             <thead>
               <tr className="bg-purple-100">
-                <th className="p-2 text-left text-sm font-medium w-2/7">Staff</th>
-                <th className="p-2 text-left text-sm font-medium w-2/7">Average Rating</th>
-                <th className="p-2 text-left text-sm font-medium w-2/7">Complaints Resolved</th>
-                <th className="p-2 text-center text-sm font-medium w-1/7">Remarks</th>
+                <th className="p-2 text-left text-sm font-medium w-2/7">
+                  Staff
+                </th>
+                <th className="p-2 text-left text-sm font-medium w-2/7">
+                  Average Rating
+                </th>
+                <th className="p-2 text-left text-sm font-medium w-2/7">
+                  Complaints Resolved
+                </th>
+                <th className="p-2 text-center text-sm font-medium w-1/7">
+                  Remarks
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -231,7 +292,11 @@ export default function DashboardPage() {
                     <td className="p-2">{staff.averageRating.toFixed(1)}</td>
                     <td className="p-2">{staff.totalTasks}</td>
                     <td className="p-2 text-center">
-                      <span className={`inline-block w-28 py-1 font-semibold rounded-lg ${badgeColor}`}>{remark}</span>
+                      <span
+                        className={`inline-block w-28 py-1 font-semibold rounded-lg ${badgeColor}`}
+                      >
+                        {remark}
+                      </span>
                     </td>
                   </tr>
                 );
@@ -244,7 +309,9 @@ export default function DashboardPage() {
       {/* Subtitle + Separator */}
       <div className="mb-4">
         <hr className="border-t border-gray-300 mb-2" />
-        <h2 className="text-lg font-semibold text-purple-700">Staff Performance Records</h2>
+        <h2 className="text-lg font-semibold text-purple-700">
+          Staff Performance Records
+        </h2>
         <hr className="border-t border-gray-300 mt-2" />
       </div>
 
@@ -266,11 +333,13 @@ export default function DashboardPage() {
             onChange={(e) => setSelectedFacility(e.target.value)}
           >
             <option value="">All Facilities</option>
-            {[...new Set(studentComplaints.map((c) => c.facility))].map((facility) => (
-              <option key={facility} value={facility}>
-                {facility}
-              </option>
-            ))}
+            {[...new Set(studentComplaints.map((c) => c.facility))].map(
+              (facility) => (
+                <option key={facility} value={facility}>
+                  {facility}
+                </option>
+              )
+            )}
           </select>
 
           <select
@@ -279,11 +348,13 @@ export default function DashboardPage() {
             onChange={(e) => setSelectedStaff(e.target.value)}
           >
             <option value="">All Staff</option>
-            {[...new Set(studentComplaints.map((c) => c.assignedTo))].map((staff) => (
-              <option key={staff} value={staff}>
-                {staff}
-              </option>
-            ))}
+            {[...new Set(studentComplaints.map((c) => c.assignedTo))].map(
+              (staff) => (
+                <option key={staff} value={staff}>
+                  {staff}
+                </option>
+              )
+            )}
           </select>
         </div>
 
@@ -329,7 +400,12 @@ interface InsightCardProps {
   textColor?: string;
 }
 
-function InsightCard({ title, value, color = "", textColor = "" }: InsightCardProps) {
+function InsightCard({
+  title,
+  value,
+  color = "",
+  textColor = "",
+}: InsightCardProps) {
   return (
     <div
       className={`${color} ${textColor} rounded-xl shadow-lg p-6 flex flex-col justify-between transform transition-transform duration-300 hover:scale-105 hover:shadow-xl`}
