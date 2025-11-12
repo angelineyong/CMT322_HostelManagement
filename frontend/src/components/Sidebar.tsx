@@ -56,7 +56,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     displayName = "Admin";
   }
 
-  const menuItems = [
+  const allMenuItems = [
+    // Staff area
     { name: "Overview", icon: LayoutDashboard, path: "/staff/" },
     { name: "Task Assigned", icon: ClipboardList, path: "/staff/task" },
     {
@@ -64,13 +65,26 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       icon: MessageSquare,
       path: "/staff/performance",
     },
+
+    // Admin area
     { name: "Dashboard", icon: BarChart3, path: "/admin/dashboard" },
     { name: "User Management", icon: Users, path: "/admin/userManagement" },
 
+    // Student area
     { name: "Home", icon: House, path: "/student/" },
     { name: "Create Complaint", icon: BadgeAlert, path: "/student/complaint" },
     { name: "Track Complaint", icon: ClipboardClock, path: "/student/track" },
   ];
+
+  // Role-based visibility filters
+  const allowedPathsByRole: Record<string, string[]> = {
+    admin: ["/admin/dashboard", "/admin/userManagement"],
+    staff: ["/staff/", "/staff/task", "/staff/performance"],
+    student: ["/student/", "/student/complaint", "/student/track"],
+  };
+  const allowedPaths = currentUser ? allowedPathsByRole[currentUser.role] ?? [] : [];
+
+  const menuItems = allMenuItems.filter((item) => allowedPaths.includes(item.path));
 
   return (
     <div
@@ -87,7 +101,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         {/* 🔹 Top Logo Section */}
         <div className="flex flex-col px-4 border-b border-white/30 py-4 relative">
           <Link
-            to="/staff/"
+            to={currentUser ? (currentUser.role === "admin" ? "/admin/dashboard" : currentUser.role === "staff" ? "/staff/" : "/student/") : "/auth/login"}
             className="flex items-center gap-3 hover:opacity-90 transition-opacity"
           >
             <img
@@ -149,7 +163,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
           <div className="border-t border-gray-200 my-3"></div>
 
-          {/* User Profile Section */}
+          {/* Students can edit their profile pictures by clicking on /student/profile; other roles only display information. */}
           {currentUser?.role === "student" ? (
             <Link
               to="/student/profile"
