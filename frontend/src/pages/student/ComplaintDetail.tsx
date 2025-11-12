@@ -30,11 +30,11 @@ const steps = [
     description:
       "The issue has been resolved.",
   },
-  {
-    label: "Feedback",
-    description:
-      "You can provide feedback about the fix or service quality.",
-  },
+//   {
+//     label: "Feedback",
+//     description:
+//       "You can provide feedback about the fix or service quality.",
+//   },
 ];
 
 const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
@@ -228,7 +228,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                       </div>
                     )}
 
-                    {isActive && step.label === "Feedback" && (
+                    {/* {isActive && step.label === "Feedback" && (
                       <div className="mt-3 ml-1">
                         <button
                           onClick={() => setShowFeedbackForm(true)}
@@ -238,7 +238,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                           Feedback Form
                         </button>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 );
               })}
