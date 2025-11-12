@@ -23,14 +23,16 @@ export default function Login() {
     if (role === "admin") {
       navigate("/admin/dashboard");
     } else {
-      navigate("/student");
+      navigate("/student/");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
-        <h1 className="text-2xl font-bold text-purple-700 mb-2">Welcome Back</h1>
+        <h1 className="text-2xl font-bold text-purple-700 mb-2">
+          Welcome Back
+        </h1>
         <p className="text-gray-600 text-sm mb-6">Login to your account</p>
 
         {err && (
@@ -41,7 +43,9 @@ export default function Login() {
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
             <input
               type="email"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -53,7 +57,9 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
             <input
               type="password"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
