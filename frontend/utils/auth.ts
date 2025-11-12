@@ -3,7 +3,7 @@
  * This is a simple front-end only implementation for demo/MVP.
  */
 
-export type UserRole = "student" | "admin";
+export type UserRole = "student" | "admin" | "staff";
 
 export interface User {
   id: string;
@@ -151,5 +151,24 @@ export function logout(): void {
     localStorage.removeItem(CURRENT_USER_KEY);
   } catch {
     // ignore
+  }
+}
+
+/**
+ * Ensure a default admin account exists for demo purposes.
+ * Email: admin@fixify.local
+ * Password: admin123
+ */
+export function ensureDefaultAdmin(): void {
+  const users = loadUsers();
+  const hasAdmin = users.some((u) => u.role === "admin");
+  if (!hasAdmin) {
+    users.push({
+      id: genId(),
+      email: "admin@fixify.local",
+      password: "admin123",
+      role: "admin",
+    });
+    saveUsers(users);
   }
 }

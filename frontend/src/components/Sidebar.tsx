@@ -2,21 +2,19 @@ import {
   LayoutDashboard,
   BarChart3,
   ClipboardList,
-  FileText,
   Users,
   ChevronLeft,
   ChevronRight,
   LogOut,
   MessageSquare,
-  Ticket,
   House,
   BadgeAlert,
   ClipboardClock,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/CampusFix_Logo2.png";
-import userAvatar from "../assets/userAvatar.png";
-import { logout } from "../../utils/auth";
+import defaultAvatar from "../assets/userAvatar.png";
+import { getCurrentUser, logout } from "../../utils/auth";
 
 // ✅ Define prop types for Sidebar
 interface SidebarProps {
@@ -28,6 +26,36 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const currentUser = getCurrentUser();
+
+  // Load student profile if available
+  let displayName = "User";
+  const displayEmail = currentUser?.email ?? "unknown@domain";
+  let profileImage = defaultAvatar;
+
+  if (currentUser?.role === "student") {
+    try {
+      const key = `hm_student_profile_${currentUser.id}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const prof = JSON.parse(raw) as {
+          name?: string;
+          profilePicture?: string;
+        };
+        if (prof?.name) displayName = prof.name;
+        if (prof?.profilePicture) profileImage = prof.profilePicture;
+      } else {
+        displayName = "Student";
+      }
+    } catch {
+      // ignore parsing errors
+    }
+  } else if (currentUser?.role === "staff") {
+    displayName = "Staff";
+  } else if (currentUser?.role === "admin") {
+    displayName = "Admin";
+  }
+
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, path: "/staff/" },
     { name: "Task Assigned", icon: ClipboardList, path: "/staff/task" },
@@ -37,8 +65,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       path: "/staff/performance",
     },
     { name: "Dashboard", icon: BarChart3, path: "/admin/dashboard" },
-    // { name: "Reports", icon: FileText, path: "/admin/reports" },
-    // { name: "Opened Ticket", icon: Ticket, path: "/admin/ticket" },
     { name: "User Management", icon: Users, path: "/admin/userManagement" },
 
     { name: "Home", icon: House, path: "/student/" },
@@ -124,27 +150,53 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <div className="border-t border-gray-200 my-3"></div>
 
           {/* User Profile Section */}
-          <div
-            className={`flex items-center gap-3 transition-all duration-300 ${
-              isOpen ? "px-4 py-2" : "px-2 py-1 justify-center"
-            }`}
-          >
-            <img
-              src={userAvatar}
-              alt="User Avatar"
-              className={`rounded-full object-cover border border-white/40 transition-all duration-300 ${
-                isOpen ? "w-10 h-10" : "w-8 h-8"
+          {currentUser?.role === "student" ? (
+            <Link
+              to="/student/profile"
+              className={`flex items-center gap-3 transition-all duration-300 ${
+                isOpen ? "px-4 py-2" : "px-2 py-1 justify-center"
+              } hover:bg-purple-100/40 rounded-lg`}
+              title="Edit profile"
+            >
+              <img
+                src={profileImage}
+                alt="User Avatar"
+                className={`rounded-full object-cover border border-white/40 transition-all duration-300 ${
+                  isOpen ? "w-10 h-10" : "w-8 h-8"
+                }`}
+              />
+              {isOpen && (
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-800">
+                    {displayName}
+                  </span>
+                  <span className="text-xs text-gray-600">{displayEmail}</span>
+                </div>
+              )}
+            </Link>
+          ) : (
+            <div
+              className={`flex items-center gap-3 transition-all duration-300 ${
+                isOpen ? "px-4 py-2" : "px-2 py-1 justify-center"
               }`}
-            />
-            {isOpen && (
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-gray-800">
-                  Kevin
-                </span>
-                <span className="text-xs text-gray-600">kevin@usm.my</span>
-              </div>
-            )}
-          </div>
+            >
+              <img
+                src={profileImage}
+                alt="User Avatar"
+                className={`rounded-full object-cover border border-white/40 transition-all duration-300 ${
+                  isOpen ? "w-10 h-10" : "w-8 h-8"
+                }`}
+              />
+              {isOpen && (
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-800">
+                    {displayName}
+                  </span>
+                  <span className="text-xs text-gray-600">{displayEmail}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="border-t border-gray-200 my-3"></div>
         </div>
