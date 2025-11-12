@@ -22,6 +22,8 @@ export default function Login() {
     const role = res.user.role;
     if (role === "admin") {
       navigate("/admin/dashboard");
+    } else if (role === "staff") {
+      navigate("/staff/");
     } else {
       navigate("/student/");
     }
