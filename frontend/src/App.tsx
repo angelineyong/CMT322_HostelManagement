@@ -25,7 +25,7 @@ useEffect(() => {
 
 
   // Define routes that should NOT show the sidebar
-  const hideSidebarRoutes = ["/auth/login", "/auth/register", "/auth/register/details", "/auth/forgot"];
+  const hideSidebarRoutes = ["/", "/auth/login", "/auth/register", "/auth/register/details", "/auth/forgot"];
 
   // Check if current path is one of them
   const shouldHideSidebar = hideSidebarRoutes.includes(location.pathname);

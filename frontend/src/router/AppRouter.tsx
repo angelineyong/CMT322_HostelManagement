@@ -1,4 +1,6 @@
 import { Routes, Route, useParams, useNavigate } from "react-router-dom";
+import LandingPage from "../pages/LandingPage"; 
+
 import HomePage from "../pages/staff/HomePage";
 import TasksPage from "../pages/staff/TasksPage";
 import TaskCategoryPage from "../pages/staff/task/[category]";
@@ -30,6 +32,9 @@ function ComplaintDetailRouteWrapper() {
 export default function AppRouter() {
   return (
     <Routes>
+      {/* Landing page route */}
+      <Route path="/" element={<LandingPage />} />
+      
       <Route path="/staff/" element={<HomePage />} />
       <Route path="/staff/task" element={<TasksPage />} />
       <Route path="/staff/task/:category" element={<TaskCategoryPage />} />

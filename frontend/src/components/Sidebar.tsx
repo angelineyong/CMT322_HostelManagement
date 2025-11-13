@@ -16,7 +16,7 @@ import logo from "../assets/CampusFix_Logo2.png";
 import defaultAvatar from "../assets/userAvatar.png";
 import { getCurrentUser, logout } from "../../utils/auth";
 
-// ✅ Define prop types for Sidebar
+// Define prop types for Sidebar
 interface SidebarProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -220,7 +220,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <button
             onClick={() => {
               logout();
-              navigate("/auth/login");
+              navigate("/");
             }}
             className="flex items-center gap-3 px-3 py-2 w-full rounded-lg 
                        hover:bg-red-100/40 text-red-600 transition-colors duration-200"
