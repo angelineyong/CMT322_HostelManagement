@@ -121,7 +121,7 @@ const TrackComplaint: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse">
             <thead>
-              <tr className="text-left text-indigo-700 border-b border-gray-300 bg-transparent">
+              <tr className="text-center text-indigo-700 border-b border-gray-300 bg-transparent">
                 <th className="pb-3">Complaint ID</th>
                 <th className="pb-3">Facility Category</th>
                 <th className="pb-3">Location / Room</th>
@@ -135,7 +135,7 @@ const TrackComplaint: React.FC = () => {
               {filteredAndSortedComplaints.map((complaint) => (
                 <tr
                   key={complaint.complaintId}
-                  className="text-sm hover:bg-indigo-50 hover:scale-[1.02] transform transition-all duration-200 cursor-default"
+                  className="text-sm hover:bg-indigo-50 hover:scale-[1.02] transform transition-all duration-200 cursor-default text-center"
                 >
                   <td className="py-3">{complaint.complaintId}</td>
                   <td className="py-3">{complaint.facilityCategory}</td>
@@ -145,7 +145,7 @@ const TrackComplaint: React.FC = () => {
                   <td className="py-3">{complaint.dateSubmitted}</td>
 
                   {/* Status Button */}
-                  <td className="py-3">
+                  <td className="py-3 flex justify-center">
                     <button
                       onClick={() => setSelectedComplaintId(complaint.complaintId)}
                       className={`px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1 transition-all duration-200 shadow-sm hover:scale-105

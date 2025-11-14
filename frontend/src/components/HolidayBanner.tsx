@@ -28,7 +28,7 @@ const HolidayBanner: React.FC = () => {
 							style={{ backgroundImage: `url(${current.image})` }}
 						/>
 						{/* dim overlay */}
-						<div className="absolute inset-0 bg-black/30" />
+						<div className="absolute inset-0 bg-black/10" />
 						<div className="relative z-10 h-full flex items-center px-6">
 							<div className="flex-1 transition-all duration-800">
 								<div className="text-white text-2xl font-semibold">{current.name}</div>

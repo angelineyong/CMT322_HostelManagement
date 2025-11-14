@@ -164,6 +164,7 @@ const StudentHome: React.FC = () => {
     
 	// const navigate = useNavigate();
 	const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
+
 	const pendingCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "pending").length;
 	const inProgressCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "in progress").length;
 	const resolvedCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "resolved").length;
@@ -377,9 +378,22 @@ const StudentHome: React.FC = () => {
 				</div>
 			</div>
 
-			{/* Holiday banner component placed after Recent Complaints and Calendar */}
-			<div className="mt-8 transition-transform duration-300 hover:scale-105">
+			{/* Holiday banner + notice */}
+			<div className="mt-8">
+			<p className="mb-6">
+				<span className="text-purple-700 font-bold text-base sm:text-3xl mb-3 leading-relaxed">
+				Heads up!
+				</span>
+				<br />
+				<span className="text-black text-sm sm:text-sm leading-relaxed">
+				Our Fixify team will be taking a short break during these holidays. 
+				Any new complaints will be attended to once we’re back in action.
+				</span>
+			</p>
+
+			<div className="transition-transform duration-300 hover:scale-105">
 				<HolidayBanner />
+			</div>
 			</div>
 			{selectedComplaintId && (
 				<ComplaintDetail
