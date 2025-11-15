@@ -10,7 +10,7 @@ interface StaffProfile {
   email: string;
   phone?: string;
   position?: string;
-  department?: string;
+  assignmentGroup?: string;
   status: StaffStatus;
 }
 
@@ -44,7 +44,7 @@ export default function UsersManagement() {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [position, setPosition] = useState("");
-  const [department, setDepartment] = useState("");
+  const [assignmentGroup, setAssignmentGroup] = useState("");
   const [status, setStatus] = useState<StaffStatus>("active");
 
   const [staffList, setStaffList] = useState<StaffProfile[]>([]);
@@ -63,7 +63,7 @@ export default function UsersManagement() {
         s.fullName.toLowerCase().includes(q) ||
         (s.email?.toLowerCase().includes(q) ?? false) ||
         (s.position?.toLowerCase().includes(q) ?? false) ||
-        (s.department?.toLowerCase().includes(q) ?? false) ||
+        (s.assignmentGroup?.toLowerCase().includes(q) ?? false) ||
         s.status.toLowerCase().includes(q)
     );
   }, [search, staffList]);
@@ -90,14 +90,20 @@ export default function UsersManagement() {
       return;
     }
 
-    const exists = staffList.some((s) => s.email.toLowerCase() === email.toLowerCase());
+    const exists = staffList.some(
+      (s) => s.email.toLowerCase() === email.toLowerCase()
+    );
     if (exists) {
       setErr("A staff with this email already exists.");
       return;
     }
 
     // Create login account for staff
-    const reg = registerUser({ email: email.trim(), password: password.trim(), role: "staff" });
+    const reg = registerUser({
+      email: email.trim(),
+      password: password.trim(),
+      role: "staff",
+    });
     if (!reg.ok) {
       setErr(reg.error);
       return;
@@ -109,7 +115,7 @@ export default function UsersManagement() {
       email: email.trim(),
       phone: phone.trim() || undefined,
       position: position.trim() || undefined,
-      department: department.trim() || undefined,
+      assignmentGroup: assignmentGroup.trim() || undefined,
       status,
     };
 
@@ -122,7 +128,7 @@ export default function UsersManagement() {
     setPassword("");
     setPhone("");
     setPosition("");
-    setDepartment("");
+    setAssignmentGroup("");
     setStatus("active");
   }
 
@@ -150,9 +156,12 @@ export default function UsersManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-purple-700">Staff Profile Management</h1>
+          <h1 className="text-2xl font-bold text-purple-700">
+            Staff Profile Management
+          </h1>
           <p className="text-gray-600 text-xs">
-            Create and manage staff profiles. Data is stored locally in your browser.
+            Create and manage staff profiles. Data is stored locally in your
+            browser.
           </p>
         </div>
         <Link
@@ -165,16 +174,29 @@ export default function UsersManagement() {
 
       {/* Create Form */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-md font-semibold text-purple-700 mb-4">Create Staff Profile</h2>
+        <h2 className="text-md font-semibold text-purple-700 mb-4">
+          Create Staff Profile
+        </h2>
 
-        {err && <div className="bg-red-100 text-red-700 text-sm p-3 rounded-lg mb-4">{err}</div>}
+        {err && (
+          <div className="bg-red-100 text-red-700 text-sm p-3 rounded-lg mb-4">
+            {err}
+          </div>
+        )}
         {okMsg && (
-          <div className="bg-green-100 text-green-700 text-sm p-3 rounded-lg mb-4">{okMsg}</div>
+          <div className="bg-green-100 text-green-700 text-sm p-3 rounded-lg mb-4">
+            {okMsg}
+          </div>
         )}
 
-        <form onSubmit={onCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form
+          onSubmit={onCreate}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name
+            </label>
             <input
               type="text"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -186,7 +208,9 @@ export default function UsersManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
             <input
               type="email"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -198,7 +222,9 @@ export default function UsersManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
             <input
               type="password"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -211,7 +237,9 @@ export default function UsersManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone
+            </label>
             <input
               type="tel"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -222,7 +250,9 @@ export default function UsersManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Position
+            </label>
             <input
               type="text"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -233,18 +263,22 @@ export default function UsersManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Assignment Group
+            </label>
             <input
               type="text"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="e.g., Maintenance"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
+              placeholder="e.g., INDUK-RESTU"
+              value={assignmentGroup}
+              onChange={(e) => setAssignmentGroup(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
             <select
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               value={status}
@@ -287,7 +321,7 @@ export default function UsersManagement() {
                 <th className="p-2">Email</th>
                 <th className="p-2">Phone</th>
                 <th className="p-2">Position</th>
-                <th className="p-2">Department</th>
+                <th className="p-2">Assignment Group</th>
                 <th className="p-2">Status</th>
                 <th className="p-2">Actions</th>
               </tr>
@@ -306,7 +340,7 @@ export default function UsersManagement() {
                     <td className="p-2">{s.email}</td>
                     <td className="p-2">{s.phone || "-"}</td>
                     <td className="p-2">{s.position || "-"}</td>
-                    <td className="p-2">{s.department || "-"}</td>
+                    <td className="p-2">{s.assignmentGroup || "-"}</td>
                     <td className="p-2">
                       <span
                         className={`inline-block px-2 py-1 rounded-lg font-semibold ${
