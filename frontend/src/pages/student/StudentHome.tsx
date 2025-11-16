@@ -119,7 +119,7 @@ const Calendar: React.FC = () => {
 					return (
 						<div
 							key={i}
-							className={`h-10 flex items-center justify-center rounded relative group cursor-pointer
+							className={`h-8 sm:h-10 flex items-center justify-center rounded text-xs sm:text-sm relative group cursor-pointer
 								${d ? "bg-gray-50" : "bg-transparent"}
 								${isToday ? "ring-2 ring-indigo-300 font-semibold" : ""}
 								${holiday ? "bg-red-50 text-red-600 font-semibold" : ""}
@@ -208,7 +208,7 @@ const StudentHome: React.FC = () => {
 	}, [searchTerm, sortBy]);
 
 	return (
-		<div className="p-9 mx-auto">
+		<div className="p-2 sm:p-4 lg:p-9 mx-auto">
 			{/* Section wrapper */}
 			<div className="relative w-full">
 
@@ -243,72 +243,72 @@ const StudentHome: React.FC = () => {
 				headerVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
 				}`}
 			>
-				<div className="flex items-center justify-center gap-3 pt-25">
-					<div className="flex flex-col justify-center h-60">
-						<div className="text-9xl font-bold text-indigo-700 mb-5">Fixify</div>
-						<div className="text-1xl text-indigo-500 font-medium mb-20">Creating comfort through your feedback.</div>
-					</div>
-				</div>				
-				<h1 className="text-3xl font-semibold mb-5 text-left">Welcome back, Kevin.</h1>
+			<div className="flex items-center justify-center gap-3 pt-6 sm:pt-10 lg:pt-16">
+				<div className="flex flex-col justify-center h-30 sm:h-32 lg:h-48">
+					<div className="font-bold text-indigo-700 mb-2 sm:mb-3 text-4xl sm:text-6xl lg:text-8xl">Fixify</div>
+					<div className="text-indigo-500 font-medium mb-4 sm:mb-8 lg:mb-12 text-xs sm:text-sm lg:text-base">Creating comfort through your feedback.</div>
+				</div>
+			</div>				
+			<h1 className="text-lg sm:text-2xl lg:text-3xl font-semibold mb-4 sm:mb-5 text-left px-4 sm:px-0">Welcome back, Kevin.</h1>
 				</div>
 			</div>
 
 			
 
-			{/* Top three summary boxes */}
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-9 mb-10">
-				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-amber-100 transition-transform duration-300 hover:scale-105">
-					<div className="flex items-center gap-10">
-						<img src={pendingIcon} alt="pending" className="w-12 h-12 rounded-md object-cover" />
-						<div>
-							<div className="text-xl font-semibold text-amber-800">Pending Complaints</div>
-							<div className="text-7xl font-bold text-amber-900 mt-2">{pending}</div>
-						</div>
+		{/* Top three summary boxes */}
+		<div className="flex gap-1 sm:gap-3 lg:gap-6 overflow-x-auto sm:grid sm:grid-cols-3 mb-4 sm:mb-6 lg:mb-8 scrollbar-hide px-4 sm:px-0">
+			<div className="p-2 sm:p-3 lg:p-4 rounded-lg shadow flex items-center justify-between bg-amber-100 transition-transform duration-300 hover:scale-105 min-w-[80px] sm:min-w-auto flex-shrink-0 sm:flex-shrink">
+				<div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+					<img src={pendingIcon} alt="pending" className="w-4 sm:w-8 lg:w-10 h-4 sm:h-8 lg:h-10 rounded-md object-cover" />
+					<div>
+						<div className="text-[10px] sm:text-sm lg:text-lg font-semibold text-amber-800 whitespace-nowrap">Pending</div>
+						<div className="text-xs sm:text-3xl lg:text-6xl font-bold text-amber-900 mt-0.5">{pending}</div>
 					</div>
 				</div>
+			</div>
 
-				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-blue-100 transition-transform duration-300 hover:scale-105">
-					<div className="flex items-center gap-10">
-						<img src={inProgressIcon} alt="in-progress" className="w-15 h-15 rounded-md object-cover" />
-						<div>
-							<div className="text-xl font-semibold text-blue-800">In Progress</div>
-							<div className="text-7xl font-bold text-blue-900 mt-2">{inProgress}</div>
-						</div>
+			<div className="p-2 sm:p-3 lg:p-4 rounded-lg shadow flex items-center justify-between bg-blue-100 transition-transform duration-300 hover:scale-105 min-w-[80px] sm:min-w-auto flex-shrink-0 sm:flex-shrink">
+				<div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+					<img src={inProgressIcon} alt="in-progress" className="w-4 sm:w-8 lg:w-10 h-4 sm:h-8 lg:h-10 rounded-md object-cover" />
+					<div>
+						<div className="text-[10px] sm:text-sm lg:text-lg font-semibold text-blue-800 whitespace-nowrap">In Progress</div>
+						<div className="text-xs sm:text-3xl lg:text-6xl font-bold text-blue-900 mt-0.5">{inProgress}</div>
 					</div>
 				</div>
+			</div>
 
-				<div className="p-6 rounded-lg shadow flex items-center justify-between bg-green-100 transition-transform duration-300 hover:scale-105">
-					<div className="flex items-center gap-10">
-						<img src={resolvedIcon} alt="resolved" className="w-12 h-12 rounded-md object-cover" />
-						<div>
-							<div className="text-xl font-semibold text-green-800">Resolved</div>
-							<div className="text-7xl font-bold text-green-900 mt-2">{resolved}</div>
+			<div className="p-2 sm:p-3 lg:p-4 rounded-lg shadow flex items-center justify-between bg-green-100 transition-transform duration-300 hover:scale-105 min-w-[80px] sm:min-w-auto flex-shrink-0 sm:flex-shrink">
+				<div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+					<img src={resolvedIcon} alt="resolved" className="w-4 sm:w-8 lg:w-10 h-4 sm:h-8 lg:h-10 rounded-md object-cover" />
+					<div>
+						<div className="text-[10px] sm:text-sm lg:text-lg font-semibold text-green-800 whitespace-nowrap">Resolved</div>
+						<div className="text-xs sm:text-3xl lg:text-6xl font-bold text-green-900 mt-0.5">{resolved}</div>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			{/* Bottom area: left table, right calendar */}
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-				<div className="lg:col-span-2 transition-transform duration-300 hover:scale-105">
-					<div className="bg-white rounded-lg shadow p-7">
-						<div className="flex items-center justify-between mb-7">
-							<h2 className="text-2xl font-semibold">Recent Complaints</h2>
+		{/* Bottom area: left table, right calendar */}
+		<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 px-4 sm:px-0">
+			<div className="lg:col-span-2 transition-transform duration-300 hover:scale-105">
+				<div className="bg-white rounded-lg shadow p-3 sm:p-5 lg:p-7">
+					<div className="flex items-center justify-between mb-4 sm:mb-5 lg:mb-7">
+						<h2 className="text-sm sm:text-xl lg:text-2xl font-semibold">Recent Complaints</h2>
 						</div>
 						
-						<div className="flex flex-col sm:flex-row gap-4 mb-4">
-							<div className="flex-1">
-								<input
-									type="text"
-									placeholder="Search complaints..."
-									className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
-									value={searchTerm}
-									onChange={(e) => setSearchTerm(e.target.value)}
-								/>
-							</div>
-							<div className="flex gap-2">
-								<select
-									className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+					<div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4 mb-4">
+						<div className="flex-1">
+							<input
+								type="text"
+								placeholder="Search complaints..."
+								className="w-full px-3 sm:px-4 py-2 text-xs rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+								value={searchTerm}
+								onChange={(e) => setSearchTerm(e.target.value)}
+							/>
+						</div>
+						<div className="flex gap-2">
+							<select
+								className="px-3 sm:px-4 py-2 text-[10px] rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
 									value={sortBy}
 									onChange={(e) => setSortBy(e.target.value)}
 								>
@@ -321,26 +321,26 @@ const StudentHome: React.FC = () => {
 							</div>
 						</div>
 
-						<div className="overflow-x-auto max-h-80 overflow-y-auto">
-							<table className="min-w-full divide-y divide-gray-200">
-								<thead>
-									<tr className="text-left text-sm text-gray-600">
-										<th className="py-2">Complaint ID</th>
-										<th className="py-2">Date Submitted</th>
-										<th className="py-2">Facility Category</th>
-										<th className="py-2">Status</th>
+					<div className="overflow-x-auto max-h-60 sm:max-h-80 overflow-y-auto">
+						<table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
+							<thead>
+						<tr className="text-left text-[8px] sm:text-xs lg:text-sm text-gray-600 bg-gray-50">
+									<th className="py-1 sm:py-2 px-1 sm:px-2">Complaint ID</th>
+									<th className="py-1 sm:py-2 px-1 sm:px-2">Date Submitted</th>
+									<th className="py-1 sm:py-2 px-1 sm:px-2">Facility Category</th>
+									<th className="py-1 sm:py-2 px-1 sm:px-2">Status</th>
 									</tr>
 								</thead>
-								<tbody className="divide-y divide-gray-100 text-sm">
-									{filteredAndSortedComplaints.map((complaint) => (
-										<tr key={complaint.complaintId} className="hover:bg-gray-50">
-											<td className="py-3">{complaint.complaintId}</td>
-											<td className="py-3">{complaint.dateSubmitted}</td>
-											<td className="py-3">{complaint.facilityCategory}</td>
-											<td className="py-3">
-												<button
-													onClick={() => setSelectedComplaintId(complaint.complaintId)}
-													className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 shadow-sm flex items-center gap-1 hover:scale-105
+							<tbody className="divide-y divide-gray-100 text-[7px] sm:text-xs lg:text-sm">
+								{filteredAndSortedComplaints.map((complaint) => (
+									<tr key={complaint.complaintId} className="hover:bg-gray-50">
+										<td className="py-1 sm:py-2 px-1 sm:px-2">{complaint.complaintId}</td>
+										<td className="py-1 sm:py-2 px-1 sm:px-2">{complaint.dateSubmitted}</td>
+										<td className="py-1 sm:py-2 px-1 sm:px-2">{complaint.facilityCategory}</td>
+										<td className="py-1 sm:py-2 px-1 sm:px-2">
+											<button
+												onClick={() => setSelectedComplaintId(complaint.complaintId)}
+												className={`px-1 sm:px-3 py-1 rounded-full text-[7px] sm:text-xs lg:text-sm font-semibold transition-all duration-200 shadow-sm flex items-center gap-1 hover:scale-105
 													${
 														complaint.status === "Resolved"
 														? "bg-green-100 text-green-700 border border-green-400 hover:bg-green-200"
@@ -351,8 +351,8 @@ const StudentHome: React.FC = () => {
 														: "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
 													}`}
 												>
-													{complaint.status}
-													<span className="text-gray-500 text-base ml-1">→</span>
+												{complaint.status}
+												<span className="text-gray-500 text-[7px] sm:text-sm lg:text-base ml-1">→</span>
 												</button>
 											</td>
 										</tr>
@@ -363,14 +363,14 @@ const StudentHome: React.FC = () => {
 					</div>
 				</div>
 
-				<div className="space-y-4">
-					{/* Staff status box above calendar */}
-					<div className="bg-white rounded-lg shadow p-4 flex items-center gap-4 transition-transform duration-300 hover:scale-105">
+			<div className="space-y-3 sm:space-y-4">
+				{/* Staff status box above calendar */}
+				<div className="bg-white rounded-lg shadow p-3 sm:p-4 flex items-center gap-3 sm:gap-4 transition-transform duration-300 hover:scale-105">
 						<div className={`w-3 h-3 rounded-full ${staffAvailability.statusType === "available" ? "bg-green-500" : staffAvailability.statusType === "out-of-office" ? "bg-yellow-500" : staffAvailability.statusType === "unavailable" ? "bg-red-500" : "bg-gray-400"}`} />
 						<div>
-							<div className="text-sm text-gray-500">Staff Status</div>
-							<div className="font-semibold">{staffAvailability.status} <span className="text-sm text-gray-400">— {staffAvailability.note}</span></div>
-							<div className="text-xs text-gray-400 mt-1">Updated: {staffAvailability.updatedAt}</div>
+					<div className="text-xs sm:text-sm text-gray-500">Staff Status</div>
+					<div className="text-sm sm:text-base font-semibold">{staffAvailability.status} <span className="text-xs sm:text-sm text-gray-400">— {staffAvailability.note}</span></div>
+					<div className="text-xs text-gray-400 mt-1">Updated: {staffAvailability.updatedAt}</div>
 						</div>
 					</div>
 
@@ -378,20 +378,20 @@ const StudentHome: React.FC = () => {
 				</div>
 			</div>
 
-			{/* Holiday banner + notice */}
-			<div className="mt-8">
-			<p className="mb-6">
-				<span className="text-purple-700 font-bold text-base sm:text-3xl mb-3 leading-relaxed">
+		{/* Holiday banner + notice */}
+		<div className="mt-4 sm:mt-6 lg:mt-8 px-2 sm:px-4 lg:px-0">
+		<p className="mb-3 sm:mb-4 lg:mb-6">
+				<span className="text-purple-700 font-bold text-xs sm:text-sm lg:text-2xl mb-2 sm:mb-3 leading-relaxed">
 				Heads up!
 				</span>
 				<br />
-				<span className="text-black text-sm sm:text-sm leading-relaxed">
+				<span className="text-black text-xs sm:text-xs lg:text-base leading-relaxed">
 				Our Fixify team will be taking a short break during these holidays. 
 				Any new complaints will be attended to once we’re back in action.
 				</span>
 			</p>
 
-			<div className="transition-transform duration-300 hover:scale-105">
+			<div className="transition-transform duration-300 hover:scale-105 text-sm sm:text-base lg:text-lg">
 				<HolidayBanner />
 			</div>
 			</div>
