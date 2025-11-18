@@ -148,7 +148,7 @@ const TrackComplaint: React.FC = () => {
                   <td className="py-2 sm:py-3 flex justify-center">
                     <button
                       onClick={() => setSelectedComplaintId(complaint.complaintId)}
-                      className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[8px] sm:text-sm font-semibold flex items-center gap-1 transition-all duration-200 shadow-sm hover:scale-105
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[9px] sm:text-[12px] md:text-[15px] font-semibold flex items-center gap-0.5 sm:gap-1 transition-all duration-200 shadow-sm hover:scale-105 whitespace-nowrap
                         ${
                           complaint.status === "Resolved"
                             ? "bg-green-100 text-green-700 border border-green-400 hover:bg-green-200"
@@ -159,9 +159,9 @@ const TrackComplaint: React.FC = () => {
                             : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
                         }`}
                     >
-                      {complaint.status.split(' ')[0]}
-                      <span className="text-gray-500 text-base ml-1">
-                        <ArrowRight size={14} />
+                      {complaint.status}
+                      <span className="text-gray-500 text-xs sm:text-sm ml-0.5 sm:ml-1 flex-shrink-0">
+                        <ArrowRight size={12} />
                       </span>
                     </button>
                   </td>
