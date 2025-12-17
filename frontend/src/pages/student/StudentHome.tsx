@@ -249,7 +249,7 @@ const StudentHome: React.FC = () => {
 					<div className="text-indigo-500 font-medium mb-4 sm:mb-8 lg:mb-12 text-xs sm:text-sm lg:text-base">Creating comfort through your feedback.</div>
 				</div>
 			</div>				
-			<h1 className="text-lg sm:text-2xl lg:text-3xl font-semibold mb-4 sm:mb-5 text-left px-4 sm:px-0">Welcome back, Kevin.</h1>
+			<h1 className="text-lg sm:text-2xl lg:text-3xl font-semibold mb-4 sm:mb-5 text-left px-4 sm:px-0">Welcome back</h1>
 				</div>
 			</div>
 
