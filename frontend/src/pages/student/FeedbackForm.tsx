@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { X, Star } from "lucide-react";
-import { studentSummaryData } from "../../data/mockData";
 import { useSearchParams } from "react-router-dom";
 
 interface FeedbackFormProps {
@@ -31,16 +30,12 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
   const isReadOnly = !!existingFeedback;
 
   useEffect(() => {
-    if (complaintId) {
-      const found = studentSummaryData.find((c) => c.complaintId === complaintId);
-      setComplaintDetails(found || null);
-
-      if (found && found.feedbackSubmitted === 1) {
-        setRating(found.feedbackStars || 0);
-        setFeedback(found.feedbackComment || "");
-      }
+    // Populate from provided existingFeedback if present; do not rely on mock data
+    if (existingFeedback) {
+      setRating(existingFeedback.stars || 0);
+      setFeedback(existingFeedback.comment || "");
     }
-  }, [complaintId]);
+  }, [complaintId, existingFeedback]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

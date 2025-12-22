@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { studentSummaryData } from "../../data/mockData";
 import { ArrowRight, Check, X, Minus } from "lucide-react";
 import ComplaintDetail from "./ComplaintDetail";
 import FeedbackForm from "./FeedbackForm";
+import { supabase } from "../../lib/supabaseClient";
 
 const TrackComplaint: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -11,10 +11,16 @@ const TrackComplaint: React.FC = () => {
   const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
   const [feedbackComplaintId, setFeedbackComplaintId] = useState<string | null>(null);
   const [feedbackData, setFeedbackData] = useState<{ [key: string]: { stars: number; comment: string } }>({});
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [loadingComplaints, setLoadingComplaints] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  
 
   // Get feedbackId from URL query (when user clicks feedback link from email)
   const [searchParams] = useSearchParams();
   const feedbackId = searchParams.get("feedbackId");
+
+  
 
   // Auto-open feedback form if feedbackId exists in URL
   useEffect(() => {
@@ -23,6 +29,82 @@ const TrackComplaint: React.FC = () => {
       window.history.replaceState({}, "", "/student/track");
     }
   }, [feedbackId]);
+
+  // Helper to format dates as dd-mm-yyyy
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
+  // Fetch complaints and related lookup tables from Supabase
+  useEffect(() => {
+    const load = async () => {
+      setLoadingComplaints(true);
+      try {
+        // capture full response for debugging
+        const complaintsRes: any = await supabase
+          .from("complaint")
+          .select("*")
+          .order("updated_at", { ascending: false });
+
+        // (removed debug logging)
+
+        if (complaintsRes.error) {
+          setFetchError((complaintsRes.error as any)?.message || String(complaintsRes.error));
+          throw complaintsRes.error;
+        }
+        setFetchError(null);
+
+        const complaintsData = complaintsRes.data;
+
+        const facilitiesRes: any = await supabase.from("facility_type").select("id, facility_type");
+        const statusesRes: any = await supabase.from("status").select("id, status_name");
+
+        // (removed debug logging)
+
+        const facilities = facilitiesRes.data;
+        const statuses = statusesRes.data;
+
+        const facMap: Record<number, string> = {};
+        (facilities || []).forEach((f: any) => (facMap[f.id] = f.facility_type));
+
+        const statusMap: Record<number, string> = {};
+        (statuses || []).forEach((s: any) => (statusMap[s.id] = s.status_name));
+
+        // (removed debug logging)
+
+        const mapped = (complaintsData || []).map((c: any) => {
+          const numeric = c.id ?? c.complaint_id ?? c.complaintId ?? null;
+          return {
+            numericId: numeric,
+            complaintId: numeric ? `TASK1000${numeric}` : "",
+            facilityCategory: facMap[c.facility_type] || "",
+            location: c.location || "",
+            dateSubmitted: c.updated_at ? formatDate(c.updated_at) : "",
+            status: statusMap[c.status] || String(c.status),
+            statusId: c.status,
+            feedback: c.feedback === true,
+            description: c.description,
+          };
+        });
+
+        setComplaints(mapped);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("Error loading complaints:", err);
+        setFetchError((err as any)?.message || String(err));
+      } finally {
+        setLoadingComplaints(false);
+      }
+    };
+
+    load();
+  }, []);
 
   // Handle feedback submission
   const handleFeedbackSubmit = (complaintId: string, feedback: string, rating: number) => {
@@ -39,17 +121,17 @@ const TrackComplaint: React.FC = () => {
 
   // Filter + sort complaints
   const filteredAndSortedComplaints = useMemo(() => {
-    let result = [...studentSummaryData];
+    let result = [...complaints];
     const term = searchTerm.toLowerCase();
 
     if (searchTerm) {
       result = result.filter(
         (c) =>
-          c.complaintId.toLowerCase().includes(term) ||
-          c.facilityCategory.toLowerCase().includes(term) ||
-          c.location.toLowerCase().includes(term) ||
-          c.roomNumber.toLowerCase().includes(term) ||
-          c.status.toLowerCase().includes(term)
+          (c.complaintId || "").toLowerCase().includes(term) ||
+          (c.facilityCategory || "").toLowerCase().includes(term) ||
+          (c.location || "").toLowerCase().includes(term) ||
+          (c.roomNumber || "").toLowerCase().includes(term) ||
+          (c.status || "").toLowerCase().includes(term)
       );
     }
 
@@ -75,7 +157,7 @@ const TrackComplaint: React.FC = () => {
     }
 
     return result;
-  }, [searchTerm, sortBy]);
+  }, [searchTerm, sortBy, complaints]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6">
@@ -168,22 +250,24 @@ const TrackComplaint: React.FC = () => {
 
                   {/* Feedback Column */}
                   <td className="py-2 sm:py-3">
-                    {complaint.feedbackSubmitted === 1 ? (
-                      <button
-                        onClick={() => setFeedbackComplaintId(complaint.complaintId)}
-                        className="hover:scale-110 transition-transform"
-                        title="View feedback"
-                      >
-                        <Check className="w-4 sm:w-5 h-4 sm:h-5 text-green-600 inline" />
-                      </button>
-                    ) : complaint.feedbackSubmitted === 0 ? (
-                      <button
-                        onClick={() => setFeedbackComplaintId(complaint.complaintId)}
-                        className="hover:scale-110 transition-transform"
-                        title="Click to give feedback"
-                      >
-                        <X className="w-4 sm:w-5 h-4 sm:h-5 text-red-500 inline" />
-                      </button>
+                    {complaint.statusId === 4 ? (
+                      complaint.feedback === true ? (
+                        <button
+                          onClick={() => setFeedbackComplaintId(complaint.complaintId)}
+                          className="hover:scale-110 transition-transform"
+                          title="View feedback"
+                        >
+                          <Check className="w-4 sm:w-5 h-4 sm:h-5 text-green-600 inline" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setFeedbackComplaintId(complaint.complaintId)}
+                          className="hover:scale-110 transition-transform"
+                          title="Click to give feedback"
+                        >
+                          <X className="w-4 sm:w-5 h-4 sm:h-5 text-red-500 inline" />
+                        </button>
+                      )
                     ) : (
                       <Minus className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 inline" />
                     )}
@@ -194,6 +278,20 @@ const TrackComplaint: React.FC = () => {
           </table>
         </div>
       </div>
+      {/* Loading / empty state */}
+      {loadingComplaints && (
+        <div className="mt-4 text-center text-sm text-gray-600">Loading complaints…</div>
+      )}
+      {!loadingComplaints && complaints.length === 0 && (
+        <div className="mt-4 text-center text-sm text-gray-600">No complaints found.</div>
+      )}
+      
+      {fetchError && (
+        <div className="mt-3 text-center text-sm text-red-600">Error loading complaints: {fetchError}</div>
+      )}
+      {!loadingComplaints && complaints.length > 0 && (
+        <div className="mt-2 text-sm text-gray-600">Loaded {complaints.length} complaints.</div>
+      )}
 
       {/* Complaint Detail Modal */}
       {selectedComplaintId && (
@@ -210,14 +308,11 @@ const TrackComplaint: React.FC = () => {
         onClose={() => setFeedbackComplaintId(null)}
         onSubmit={handleFeedbackSubmit}
         existingFeedback={
-          // First check local state (newly submitted feedback), else check mock data
+          // First check local state (newly submitted feedback), else check fetched complaints
           feedbackData[feedbackComplaintId] ||
-          studentSummaryData.find(c => c.complaintId === feedbackComplaintId && c.feedbackSubmitted === 1)
-            ? {
-                stars: studentSummaryData.find(c => c.complaintId === feedbackComplaintId)?.feedbackStars || 0,
-                comment: studentSummaryData.find(c => c.complaintId === feedbackComplaintId)?.feedbackComment || "",
-              }
-            : undefined
+          (complaints.find((c) => c.complaintId === feedbackComplaintId && c.feedback)
+            ? { stars: 0, comment: "" }
+            : undefined)
         }
       />
     )}
