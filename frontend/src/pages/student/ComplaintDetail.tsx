@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { studentSummaryData } from "../../data/mockData";
-import { Pickaxe, MessageSquare, Image as ImageIcon, MessageCircle, ChevronDown, ChevronUp} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import { Pickaxe, MessageSquare, Image as ImageIcon, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import samplePhoto from "../../assets/SampleFix.jpg";
 import FeedbackForm from "./FeedbackForm";
 
@@ -37,19 +37,117 @@ const steps = [
 //   },
 ];
 
-const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
-  complaintId,
-  onClose,
-}) => {
+const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onClose }) => {
   if (!complaintId) return null;
 
-  const complaint = studentSummaryData.find(
-    (item) => item.complaintId === complaintId
-  );
-
+  const [complaint, setComplaint] = useState<any | null>(null);
+  const [loadingComplaint, setLoadingComplaint] = useState<boolean>(true);
   const [showComment, setShowComment] = useState(false);
-  const [showPhoto, setShowPhoto] = useState(false)
+  const [showPhoto, setShowPhoto] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
+  const formatDateTime = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      setLoadingComplaint(true);
+      try {
+        // attempt to extract numeric id from complaintId
+        // support formats like TASK10001 (we produced TASK1000{id}), or plain numeric IDs
+        let numericId: number | null = null;
+        const taskMatch = complaintId.match(/TASK1000(\d+)$/i);
+        if (taskMatch) {
+          numericId = Number(taskMatch[1]);
+        } else {
+          const numericMatch = complaintId.match(/(\d+)$/);
+          numericId = numericMatch ? Number(numericMatch[1]) : null;
+        }
+
+        let { data: compData, error: compError } = numericId
+          ? await supabase.from("complaint").select("*").eq("id", numericId).limit(1).single()
+          : await supabase.from("complaint").select("*").eq("complaint_id", complaintId).limit(1).single();
+
+        if (compError) throw compError;
+
+        const c = compData as any;
+
+        // fetch facility and status names (handle multiple possible column names)
+        const { data: facData } = await supabase
+          .from("facility_type")
+          .select("*")
+          .eq("id", c.facility_type)
+          .limit(1)
+          .single();
+
+        const { data: statData } = await supabase
+          .from("status")
+          .select("*")
+          .eq("id", c.status)
+          .limit(1)
+          .single();
+
+        const facilityName = facData?.facility_type ?? facData?.name ?? facData?.label ?? "";
+        const statusName = statData?.status_name ?? statData?.name ?? statData?.label ?? String(c.status ?? "");
+
+        const roomNumber = c.room_number ?? c.roomNumber ?? c.room_no ?? c.room ?? "";
+        const location = c.location ?? c.loc ?? "";
+        const dateIso = c.created_at ?? c.createdAt ?? null;
+        const updatedAtIso = c.updated_at ?? c.updatedAt ?? null;
+
+        setComplaint({
+          numericId: c.id,
+          complaintId: numericId ? `TASK1000${numericId}` : complaintId,
+          facilityCategory: facilityName,
+          location,
+          roomNumber,
+          dateSubmitted: formatDate(dateIso),
+          updatedAtIso,
+          status: statusName,
+          description: c.description || "",
+          feedback: c.feedback === true,
+        });
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("Error loading complaint detail:", err);
+        setComplaint(null);
+      }
+      finally {
+        setLoadingComplaint(false);
+      }
+    };
+
+    load();
+  }, [complaintId]);
+
+  if (loadingComplaint) {
+    return (
+      <div className="fixed inset-0 bg-transparent bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="p-6">
+          <p className="text-gray-700">Loading complaint...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!complaint) {
     return (
@@ -68,13 +166,10 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
   }
 
   // If status is Resolved, also show Feedback as next active stage
-  let currentStep = steps.findIndex(
-    (s) => s.label.toLowerCase() === complaint.status.toLowerCase()
-  );
+  let currentStep = steps.findIndex((s) => s.label.toLowerCase() === complaint.status.toLowerCase());
   if (complaint.status === "Resolved") {
     currentStep = steps.length - 1; // include Feedback step
   }
-
 
   return (
     <div className="fixed inset-0 bg-transparent bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -171,7 +266,11 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                         isActive ? "text-gray-700" : "text-gray-400"
                       }`}
                     >
-                      {step.description}
+                      {step.label === "Resolved" && complaint.updatedAtIso
+                        ? `${step.description} Resolved on ${formatDateTime(
+                            complaint.updatedAtIso
+                          )}`
+                        : step.description}
                     </p>
 
                     {/* Collapsible: In Progress Comment */}
@@ -227,18 +326,6 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                         )}
                       </div>
                     )}
-
-                    {/* {isActive && step.label === "Feedback" && (
-                      <div className="mt-3 ml-1">
-                        <button
-                          onClick={() => setShowFeedbackForm(true)}
-                          className="mt-2 flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-all duration-200 shadow-md"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          Feedback Form
-                        </button>
-                      </div>
-                    )} */}
                   </div>
                 );
               })}

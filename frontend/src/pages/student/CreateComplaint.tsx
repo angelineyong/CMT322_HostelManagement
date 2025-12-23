@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import complaintImage from "../../assets/Tools.png";
+import { supabase } from "../../lib/supabaseClient";
 
 const CreateComplaint: React.FC = () => {
   const [category, setCategory] = useState<string>("");
@@ -7,6 +8,9 @@ const CreateComplaint: React.FC = () => {
   const [description, setDescription] = useState<string>("");
   const [image, setImage] = useState<File | null>(null);
   const [showPopup, setShowPopup] = useState(false);
+  const [facilityTypes, setFacilityTypes] = useState<Array<any>>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -16,31 +20,116 @@ const CreateComplaint: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setShowPopup(true);
+    setError(null);
+    (async () => {
+      if (!category) {
+        setError("Please choose a category.");
+        return;
+      }
+      if (!facilityType) {
+        setError("Please choose a facility type.");
+        return;
+      }
+      if (!description.trim()) {
+        setError("Please enter a description.");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const BUCKET = (import.meta.env.VITE_SUPABASE_BUCKET as string) || "complaint";
+        let publicUrl: string | null = null;
+
+        const insertPayload: any = {
+          facility_type: Number(facilityType),
+          description: description.trim(),
+          status: 1, // initial status (Submitted)
+        };
+
+        // attach authenticated user id when available (safe no-op if not signed in)
+        try {
+          // supabase.auth.getUser() returns { data: { user } } in latest client
+          // fall back safely if method not available
+          const userResult = await supabase.auth.getUser?.();
+          const user = userResult?.data?.user ?? null;
+          if (user && user.id) insertPayload.user_id = user.id;
+        } catch (e) {
+          // ignore auth errors here; insertion will proceed without user_id
+        }
+
+        if (image) {
+          const fileName = `${Date.now()}_${image.name}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from(BUCKET)
+            .upload(fileName, image as File, { cacheControl: "3600", upsert: false });
+
+          if (uploadError) {
+            // stop and surface upload error instead of inserting without image
+            // eslint-disable-next-line no-console
+            console.error("Supabase storage upload error:", uploadError);
+            setError(`Image upload failed: ${uploadError.message}`);
+            setLoading(false);
+            return;
+          }
+
+          // uploadData.path contains the stored path; also get a public URL
+          const uploadedPath = (uploadData as any)?.path ?? fileName;
+          const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(uploadedPath);
+          publicUrl = (urlData as any)?.publicUrl ?? null;
+          // include stored path in DB so you can later verify and generate URL server-side if needed
+          insertPayload.image_path = uploadedPath;
+        }
+
+        if (publicUrl) insertPayload.image_url = publicUrl;
+
+        const { data: inserted, error: insertError } = await supabase
+          .from("complaint")
+          .insert([insertPayload]);
+
+        if (insertError) {
+          throw insertError;
+        }
+
+        // success
+        setShowPopup(true);
+        // reset form
+        setCategory("");
+        setFacilityType("");
+        setDescription("");
+        setImage(null);
+      } catch (err: any) {
+        // eslint-disable-next-line no-console
+        console.error("Error submitting complaint:", err);
+        setError(err?.message || "Failed to submit complaint.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
-  const individualFacilities = [
-    "Ceiling fan",
-    "Key",
-    "Table lamp",
-    "Ceiling light",
-    "Furniture",
-    "Electrical socket / Power Connection",
-    "Other facilities in the room",
-  ];
+  useEffect(() => {
+    const loadFacilityTypes = async () => {
+      try {
+        const { data, error } = await supabase.from("facility_type").select("*");
+        if (error) throw error;
+        setFacilityTypes(data || []);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("Failed loading facility types:", err);
+      }
+    };
 
-  const sharedFacilities = [
-    "Study Room",
-    "Bathroom",
-    "TV Room",
-    "Corridor",
-    "Pantry",
-    "Surau / Prayer Room",
-    "Others",
-  ];
+    loadFacilityTypes();
+  }, []);
 
-  const facilityOptions =
-    category === "Individual" ? individualFacilities : sharedFacilities;
+  // derive options from DB; filter by numeric category_id: 1 = Individual, 2 = Shared
+  const facilityOptions = facilityTypes.filter((f) => {
+    if (!category) return false;
+    const catId = f.category_id ?? f.categoryId ?? (f.category ? Number(f.category) : null);
+    if (category === "Individual") return Number(catId) === 1;
+    if (category === "Shared") return Number(catId) === 2;
+    return false;
+  });
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
@@ -111,14 +200,14 @@ const CreateComplaint: React.FC = () => {
                 {category ? "Select Facility" : "Please choose a category first"}
               </option>
 
-              {facilityOptions.map((item, index) => (
-                <option key={index} value={item}>
-                  {item}
+              {facilityOptions.map((item: any) => (
+                <option key={item.id} value={String(item.id)}>
+                  {item.facility_type ?? item.name ?? item.label ?? `Type ${item.id}`}
                 </option>
               ))}
             </select>
           </div>
-
+ 
           {/* Description */}
           <div>
             <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">Issue Description</label>
@@ -150,11 +239,13 @@ const CreateComplaint: React.FC = () => {
           </div>
 
           {/* Submit */}
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            className="mt-2 sm:mt-4 bg-indigo-600 text-white py-2 sm:py-3 rounded-lg text-sm sm:text-lg font-semibold hover:bg-indigo-700 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            disabled={loading}
+            className={`mt-2 sm:mt-4 ${loading ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'} text-white py-2 sm:py-3 rounded-lg text-sm sm:text-lg font-semibold transition-all duration-300 ${loading ? '' : 'hover:scale-105 hover:shadow-lg'}`}
           >
-            Submit Complaint
+            {loading ? "Submitting..." : "Submit Complaint"}
           </button>
 
         </form>

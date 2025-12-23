@@ -1,14 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { ArrowRight, Check, X, Minus } from "lucide-react";
-import ComplaintDetail from "./ComplaintDetail";
 import FeedbackForm from "./FeedbackForm";
 import { supabase } from "../../lib/supabaseClient";
 
 const TrackComplaint: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("");
-  const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
+  
   const [feedbackComplaintId, setFeedbackComplaintId] = useState<string | null>(null);
   const [feedbackData, setFeedbackData] = useState<{ [key: string]: { stars: number; comment: string } }>({});
   const [complaints, setComplaints] = useState<any[]>([]);
@@ -19,6 +18,7 @@ const TrackComplaint: React.FC = () => {
   // Get feedbackId from URL query (when user clicks feedback link from email)
   const [searchParams] = useSearchParams();
   const feedbackId = searchParams.get("feedbackId");
+  const navigate = useNavigate();
 
   
 
@@ -50,7 +50,7 @@ const TrackComplaint: React.FC = () => {
         const complaintsRes: any = await supabase
           .from("complaint")
           .select("*")
-          .order("updated_at", { ascending: false });
+          .order("created_at", { ascending: false });
 
         // (removed debug logging)
 
@@ -85,7 +85,7 @@ const TrackComplaint: React.FC = () => {
             complaintId: numeric ? `TASK1000${numeric}` : "",
             facilityCategory: facMap[c.facility_type] || "",
             location: c.location || "",
-            dateSubmitted: c.updated_at ? formatDate(c.updated_at) : "",
+            dateSubmitted: c.created_at ? formatDate(c.created_at) : "",
             status: statusMap[c.status] || String(c.status),
             statusId: c.status,
             feedback: c.feedback === true,
@@ -229,7 +229,7 @@ const TrackComplaint: React.FC = () => {
                   {/* Status Button */}
                   <td className="py-2 sm:py-3 flex justify-center">
                     <button
-                      onClick={() => setSelectedComplaintId(complaint.complaintId)}
+                      onClick={() => navigate(`/complaint/${complaint.complaintId}`)}
                       className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[9px] sm:text-[12px] md:text-[15px] font-semibold flex items-center gap-0.5 sm:gap-1 transition-all duration-200 shadow-sm hover:scale-105 whitespace-nowrap
                         ${
                           complaint.status === "Resolved"
@@ -293,13 +293,7 @@ const TrackComplaint: React.FC = () => {
         <div className="mt-2 text-sm text-gray-600">Loaded {complaints.length} complaints.</div>
       )}
 
-      {/* Complaint Detail Modal */}
-      {selectedComplaintId && (
-        <ComplaintDetail
-          complaintId={selectedComplaintId}
-          onClose={() => setSelectedComplaintId(null)}
-        />
-      )}
+      
 
      {/* Feedback Form Modal */}
     {feedbackComplaintId && (
