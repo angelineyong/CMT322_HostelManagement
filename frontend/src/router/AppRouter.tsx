@@ -1,5 +1,6 @@
 import { Routes, Route, useParams, useNavigate } from "react-router-dom";
 import LandingPage from "../pages/LandingPage";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 import HomePage from "../pages/staff/HomePage";
 import TasksPage from "../pages/staff/TasksPage";
@@ -37,23 +38,32 @@ export default function AppRouter() {
       {/* Landing page route */}
       <Route path="/" element={<LandingPage />} />
 
-      <Route path="/staff/" element={<HomePage />} />
-      <Route path="/staff/task" element={<TasksPage />} />
-      <Route path="/staff/task/:category" element={<TaskCategoryPage />} />
-      <Route path="/staff/task/:category/:id" element={<TaskDetailPage />} />
-      <Route path="/staff/performance" element={<PerformanceInsightsPage />} />
+      {/* Protected Routes */}
+      <Route element={<ProtectedRoute />}>
+        {/* Staff Routes */}
+        <Route path="/staff/" element={<HomePage />} />
+        <Route path="/staff/task" element={<TasksPage />} />
+        <Route path="/staff/task/:category" element={<TaskCategoryPage />} />
+        <Route path="/staff/task/:category/:id" element={<TaskDetailPage />} />
+        <Route
+          path="/staff/performance"
+          element={<PerformanceInsightsPage />}
+        />
 
-      <Route path="/admin/dashboard" element={<DashboardPage />} />
-      <Route path="/admin/userManagement" element={<UsersManagement />} />
+        {/* Admin Routes */}
+        <Route path="/admin/dashboard" element={<DashboardPage />} />
+        <Route path="/admin/userManagement" element={<UsersManagement />} />
 
-      <Route path="/student" element={<StudentHome />} />
-      <Route path="/student/profile" element={<StudentProfile />} />
-      <Route path="/student/complaint" element={<CreateComplaint />} />
-      <Route path="/student/track" element={<TrackComplaint />} />
-      <Route
-        path="/complaint/:complaintId"
-        element={<ComplaintDetailRouteWrapper />}
-      />
+        {/* Student Routes */}
+        <Route path="/student" element={<StudentHome />} />
+        <Route path="/student/profile" element={<StudentProfile />} />
+        <Route path="/student/complaint" element={<CreateComplaint />} />
+        <Route path="/student/track" element={<TrackComplaint />} />
+        <Route
+          path="/complaint/:complaintId"
+          element={<ComplaintDetailRouteWrapper />}
+        />
+      </Route>
 
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/register" element={<RegisterStep1 />} />
