@@ -1,5 +1,5 @@
 import { Routes, Route, useParams, useNavigate } from "react-router-dom";
-import LandingPage from "../pages/LandingPage"; 
+import LandingPage from "../pages/LandingPage";
 
 import HomePage from "../pages/staff/HomePage";
 import TasksPage from "../pages/staff/TasksPage";
@@ -29,12 +29,14 @@ function ComplaintDetailRouteWrapper() {
   );
 }
 
+import UpdatePassword from "../pages/auth/UpdatePassword";
+
 export default function AppRouter() {
   return (
     <Routes>
       {/* Landing page route */}
       <Route path="/" element={<LandingPage />} />
-      
+
       <Route path="/staff/" element={<HomePage />} />
       <Route path="/staff/task" element={<TasksPage />} />
       <Route path="/staff/task/:category" element={<TaskCategoryPage />} />
@@ -48,12 +50,16 @@ export default function AppRouter() {
       <Route path="/student/profile" element={<StudentProfile />} />
       <Route path="/student/complaint" element={<CreateComplaint />} />
       <Route path="/student/track" element={<TrackComplaint />} />
-      <Route path="/complaint/:complaintId" element={<ComplaintDetailRouteWrapper />} />
+      <Route
+        path="/complaint/:complaintId"
+        element={<ComplaintDetailRouteWrapper />}
+      />
 
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/register" element={<RegisterStep1 />} />
       <Route path="/auth/register/details" element={<RegisterStep2 />} />
       <Route path="/auth/forgot" element={<ForgotPassword />} />
+      <Route path="/auth/update-password" element={<UpdatePassword />} />
     </Routes>
   );
 }
