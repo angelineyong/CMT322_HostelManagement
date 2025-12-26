@@ -99,6 +99,8 @@ export default function RegisterStep2() {
     }
 
     if (!profile.hostelBlock) return "Please select a Hostel Block.";
+    if (!selectedFile && !profile.profilePicture)
+      return "Profile picture is required.";
 
     return null;
   }
@@ -231,30 +233,53 @@ export default function RegisterStep2() {
           onSubmit={onSubmit}
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
-          {/* Avatar */}
-          <div className="md:col-span-2 flex items-center gap-4">
-            <img
-              src={profile.profilePicture || defaultAvatar}
-              alt="Profile"
-              className="w-16 h-16 rounded-full object-cover border"
-            />
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Profile Picture
-              </label>
+          {/* Profile Picture (Centered, Full Width) */}
+          <div className="md:col-span-2 flex flex-col items-center justify-center p-6 border-2 border-dashed border-purple-200 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors">
+            <label className="block text-sm font-bold text-purple-700 mb-3">
+              Profile Picture <span className="text-red-500">*</span>
+            </label>
+            <div className="relative group cursor-pointer">
+              {profile.profilePicture ? (
+                <img
+                  src={profile.profilePicture}
+                  alt="Preview"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md"
+                />
+              ) : (
+                <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center text-gray-400 border-2 border-gray-200 shadow-sm">
+                  <span className="text-sm font-medium">Upload Photo</span>
+                </div>
+              )}
               <input
                 type="file"
                 accept="image/*"
-                className="text-sm"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) onFileSelected(f);
                 }}
+                required={!selectedFile} // HTML5 validation
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Upload an image to update your avatar.
-              </p>
+              <div className="absolute bottom-0 right-0 bg-purple-600 text-white p-2 rounded-full shadow-sm">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                  />
+                </svg>
+              </div>
             </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Click to upload a clear photo of yourself.
+            </p>
           </div>
 
           <div>
