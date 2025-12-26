@@ -2,30 +2,32 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import AppRouter from "./router/AppRouter";
-import { ensureDefaultAdmin } from "../utils/auth";
 
 export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
 
-  // Ensure a default admin exists (virtual account)
-useEffect(() => {
-  // 1️ Read existing users
-  const users = JSON.parse(localStorage.getItem("hm_users") || "[]");
-
-  // 2️ Delete the old admin (if any).
-  const filtered = users.filter((u: any) => u.role !== "admin");
-
-  // 3️ Save the filtered user list
-  localStorage.setItem("hm_users", JSON.stringify(filtered));
-
-  // 4️ Create default admin
-  ensureDefaultAdmin();
-}, []);
-
+  // Ensure a default admin exists (virtual account) - REMOVED (Supabase Auth)
+  useEffect(() => {
+    // 1️ Read existing users
+    // const users = JSON.parse(localStorage.getItem("hm_users") || "[]");
+    // // 2️ Delete the old admin (if any).
+    // const filtered = users.filter((u: any) => u.role !== "admin");
+    // // 3️ Save the filtered user list
+    // localStorage.setItem("hm_users", JSON.stringify(filtered));
+    // 4️ Create default admin
+    // ensureDefaultAdmin();
+  }, []);
 
   // Define routes that should NOT show the sidebar
-  const hideSidebarRoutes = ["/", "/auth/login", "/auth/register", "/auth/register/details", "/auth/forgot"];
+  const hideSidebarRoutes = [
+    "/",
+    "/auth/login",
+    "/auth/register",
+    "/auth/register/details",
+    "/auth/forgot",
+    "/auth/update-password",
+  ];
 
   // Check if current path is one of them
   const shouldHideSidebar = hideSidebarRoutes.includes(location.pathname);
