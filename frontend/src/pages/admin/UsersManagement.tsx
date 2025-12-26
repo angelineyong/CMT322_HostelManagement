@@ -368,9 +368,7 @@ export default function UsersManagement() {
                 </svg>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Click to upload. Required.
-            </p>
+            <p className="text-xs text-gray-500 mt-2">Click to upload.</p>
           </div>
 
           {/* Row 2: Basic Info */}
@@ -523,7 +521,7 @@ export default function UsersManagement() {
                     <td className="p-3 text-right">
                       <button
                         onClick={() => remove(s.id)}
-                        className="text-red-500 hover:text-red-700 hover:underline px-2 py-1 rounded"
+                        className="text-red-500 hover:text-red-700 hover:underline px-2 py-1 rounded cursor-pointer"
                       >
                         Delete
                       </button>
