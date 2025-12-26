@@ -56,7 +56,7 @@ export default function ForgotPassword() {
             <input
               type="email"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="you@example.com"
+              placeholder="you@student.usm.my/usm.my"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

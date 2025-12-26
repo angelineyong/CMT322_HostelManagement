@@ -3,44 +3,61 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 
-type StaffStatus = "active" | "inactive";
-
 interface StaffProfile {
   id: string;
   fullName: string;
   email: string;
   phone?: string;
-  position?: string;
   assignmentGroup?: string;
-  status: StaffStatus;
+  profilePic?: string;
 }
 
 export default function UsersManagement() {
-  const { profile, isAdmin } = useAuth();
+  const { isAdmin } = useAuth(); // removed unused vars
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [position, setPosition] = useState("");
   const [assignmentGroup, setAssignmentGroup] = useState("");
-  const [status, setStatus] = useState<StaffStatus>("active");
+  const [groups, setGroups] = useState<string[]>([]); // New state for groups
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const [staffList, setStaffList] = useState<StaffProfile[]>([]);
   const [search, setSearch] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch staff list from Supabase
+  // Fetch staff list and groups
   useEffect(() => {
     if (isAdmin) {
-      loadStaff();
+      loadData();
     }
   }, [isAdmin]);
 
+  async function loadData() {
+    setLoading(true);
+    await Promise.all([loadStaff(), loadGroups()]);
+    setLoading(false);
+  }
+
+  async function loadGroups() {
+    const { data, error } = await supabase
+      .from("assignment_groups")
+      .select("name")
+      .order("name");
+
+    if (error) {
+      console.error("Error loading groups:", error);
+    } else if (data) {
+      setGroups(data.map((g: any) => g.name));
+    }
+  }
+
   async function loadStaff() {
-    // Join profiles and staff table to get full details
-    // For simplicity, fetching from profiles where role is staff
+    // Fetch profiles where role is 'staff'
     const { data, error } = await supabase
       .from("profiles")
       .select(
@@ -50,6 +67,7 @@ export default function UsersManagement() {
         email,
         phone,
         role,
+        profile_pic_url,
         staff(assigned_group)
       `
       )
@@ -66,9 +84,10 @@ export default function UsersManagement() {
       fullName: p.full_name || "",
       email: p.email || "",
       phone: p.phone || undefined,
-      position: "Staff", // generic
-      assignmentGroup: p.staff?.[0]?.assigned_group || undefined,
-      status: "active", // Supabase doesn't have status yet, assume active
+      assignmentGroup: Array.isArray(p.staff)
+        ? p.staff[0]?.assigned_group
+        : p.staff?.assigned_group,
+      profilePic: p.profile_pic_url,
     }));
     setStaffList(mapped);
   }
@@ -79,9 +98,7 @@ export default function UsersManagement() {
       (s) =>
         s.fullName.toLowerCase().includes(q) ||
         (s.email?.toLowerCase().includes(q) ?? false) ||
-        (s.position?.toLowerCase().includes(q) ?? false) ||
-        (s.assignmentGroup?.toLowerCase().includes(q) ?? false) ||
-        s.status.toLowerCase().includes(q)
+        (s.assignmentGroup?.toLowerCase().includes(q) ?? false)
     );
   }, [search, staffList]);
 
@@ -89,57 +106,168 @@ export default function UsersManagement() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
+  function onFileSelected(file: File) {
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
     setOkMsg(null);
 
-    if (!fullName.trim()) {
-      setErr("Full Name is required.");
+    // Basic Validation
+    if (
+      !fullName.trim() ||
+      !email.trim() ||
+      !password ||
+      !phone.trim() ||
+      !assignmentGroup.trim() ||
+      !selectedFile
+    ) {
+      setErr("All fields are required, including the Profile Picture.");
       return;
     }
     if (!isValidEmail(email)) {
       setErr("Invalid staff email format.");
       return;
     }
-    if ((password ?? "").length < 6) {
+    if (password.length < 6) {
       setErr("Password must be at least 6 characters.");
       return;
     }
 
+    setLoading(true);
     try {
-      // Create staff user in Supabase
-      // Note: Creating a user with a specific role usually requires Admin Auth Client (service_role)
-      // or a specific Edge Function if we are client-side.
-      // For this demo, we can try signUp but it logs in the new user immediately which disrupts the admin session.
-      // The proper way is using supabase.auth.admin.createUser() but that needs service_role key which is backend only.
+      // 1. Create a temporary Supabase client to avoid logging out the Admin
+      // We use the same URL and Key, but with persistence disabled.
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      // WORKAROUND for Demo: We will use a second (temporary) client or valid backend logic.
-      // Given constraints, we'll simulating "Creating" by asking them to sign up, OR
-      // we accept that we can't easily create another user without logging out.
+      const { createClient } = await import("@supabase/supabase-js");
+      const tempClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: false, // Critical: Don't store this session
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      });
 
-      // Let's assume for now we just want to stub this or use a workaround.
-      // Option: Send an invite? Supabase supports inviteUserByEmail but typically backend only.
-
-      setErr(
-        "Admin creating other users requires backend integration. In this client-only demo, please ask staff to register themselves via the /auth/register page."
+      // 2. Sign Up the Staff User
+      const { data: authData, error: authError } = await tempClient.auth.signUp(
+        {
+          email: email.trim(),
+          password: password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+              role: "staff", // Trigger will see this and create public.staff entry
+            },
+          },
+        }
       );
-      return;
 
-      /* 
-        // Real implementation would be calls to a Supabase Edge Function:
-        const { data, error } = await supabase.functions.invoke('create-user', { 
-            body: { email, password, role: 'staff', full_name: fullName, ... } 
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Failed to create user object.");
+
+      const newUserId = authData.user.id;
+      let profile_pic_url = null;
+
+      // 3. Upload Image (using Admin client, which has permission)
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split(".").pop();
+        // Save under the new user's specific folder
+        const filePath = `${newUserId}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, selectedFile);
+
+        if (uploadError)
+          throw new Error("Failed to upload image: " + uploadError.message);
+
+        const { data: publicUrlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(filePath);
+
+        profile_pic_url = publicUrlData.publicUrl;
+      }
+
+      // 4. Update the created Profile and Staff entries
+      // The trigger 'handle_new_user' should have already created the rows.
+      // We update them with the extra info (phone, pic, assignment).
+      // Note: Admin should have RLS permissions to update 'profiles' and 'staff'.
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          phone: phone.trim(),
+          profile_pic_url: profile_pic_url,
         })
-        */
+        .eq("id", newUserId);
+
+      if (profileError)
+        throw new Error("Profile update failed: " + profileError.message);
+
+      const { error: staffError } = await supabase
+        .from("staff")
+        .update({
+          assigned_group: assignmentGroup.trim(),
+        })
+        .eq("id", newUserId);
+
+      if (staffError)
+        throw new Error("Staff details update failed: " + staffError.message);
+
+      setOkMsg("Staff account created! Verification email has been sent.");
+
+      setFullName("");
+      setEmail("");
+      setPassword("");
+      setPhone("");
+      setAssignmentGroup("");
+      setSelectedFile(null);
+      setPreview(null);
+
+      // Reload list
+      loadData();
     } catch (error: any) {
-      setErr(error.message);
+      console.error("Staff Creation Error:", error);
+      setErr(error.message || "Failed to create staff account.");
+    } finally {
+      setLoading(false);
     }
   }
 
-  function remove(id: string) {
-    // Same limitation: Admin cannot easily delete other users client-side without service role.
-    setErr("Deleting users requires backend integration.");
+  async function remove(id: string) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this staff member? This cannot be undone."
+      )
+    ) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc("delete_user_by_admin", {
+        user_id_to_delete: id,
+      });
+      if (error) throw error;
+
+      setOkMsg("Staff user deleted successfully.");
+      loadStaff();
+    } catch (error: any) {
+      console.error(error);
+      setErr(
+        error.message || "Failed to delete user. Ensure you have permission."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (!isAdmin) {
@@ -164,7 +292,7 @@ export default function UsersManagement() {
             Staff Profile Management
           </h1>
           <p className="text-gray-600 text-xs">
-            Manage staff profiles. (Note: Creation disabled in client-only mode)
+            Create, view, and manage staff accounts.
           </p>
         </div>
         <Link
@@ -192,36 +320,145 @@ export default function UsersManagement() {
           </div>
         )}
 
-        <div className="p-4 bg-blue-50 text-blue-800 rounded mb-4 text-sm">
-          To add new staff, please have them register via the public
-          registration page using a specific Staff code or manually update their
-          role in the database after registration.
-        </div>
-
         <form
           onSubmit={onCreate}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-50 pointer-events-none"
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
-          {/* ... inputs kept for UI visual but disabled ... */}
+          {/* Row 1: Profile Picture (Centered, Full Width) */}
+          <div className="md:col-span-2 flex flex-col items-center justify-center p-6 border-2 border-dashed border-purple-200 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors">
+            <label className="block text-sm font-bold text-purple-700 mb-3">
+              Profile Picture <span className="text-red-500">*</span>
+            </label>
+            <div className="relative group cursor-pointer">
+              {preview ? (
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md"
+                />
+              ) : (
+                <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center text-gray-400 border-2 border-gray-200 shadow-sm">
+                  <span className="text-sm font-medium">Upload Photo</span>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onFileSelected(f);
+                }}
+                required={!selectedFile} // HTML5 validation if supported, otherwise manual check
+              />
+              <div className="absolute bottom-0 right-0 bg-purple-600 text-white p-2 rounded-full shadow-sm">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                  />
+                </svg>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Click to upload. Required.
+            </p>
+          </div>
+
+          {/* Row 2: Basic Info */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
+              Full Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="e.g. Staff Name"
               value={fullName}
-              readOnly
+              onChange={(e) => setFullName(e.target.value)}
+              required
             />
           </div>
-          {/* ... other inputs ... */}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="staff@usm.my"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Row 3: Security & Contact */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="password"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="e.g. 0123456789"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Row 4: Job Info */}
           <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Assignment Group <span className="text-red-500">*</span>
+            </label>
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              value={assignmentGroup}
+              onChange={(e) => setAssignmentGroup(e.target.value)}
+              required
+            >
+              <option value="">Select Group...</option>
+              {groups.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-2 mt-4">
             <button
               type="submit"
-              disabled
-              className="w-full bg-purple-600 text-white font-semibold py-2 rounded-lg"
+              disabled={loading}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:bg-purple-400 disabled:scale-100 shadow-md"
             >
-              Create (Disabled)
+              {loading ? "Creating..." : "Create Staff Account"}
             </button>
           </div>
         </form>
@@ -233,8 +470,8 @@ export default function UsersManagement() {
           <h2 className="text-md font-semibold text-purple-700">Staff List</h2>
           <input
             type="text"
-            placeholder="Search name, email..."
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            placeholder="Search..."
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -243,32 +480,53 @@ export default function UsersManagement() {
         <div className="overflow-x-auto rounded-md">
           <table className="min-w-full border border-gray-200 rounded-lg text-left text-xs">
             <thead>
-              <tr className="bg-purple-100">
-                <th className="p-2">Full Name</th>
-                <th className="p-2">Email</th>
-                <th className="p-2">Phone</th>
-                <th className="p-2">Assignment Group</th>
-                <th className="p-2">Status</th>
+              <tr className="bg-purple-100 uppercase text-purple-700 font-semibold">
+                <th className="p-3">Full Name</th>
+                <th className="p-3">Email</th>
+                <th className="p-3">Phone</th>
+                <th className="p-3">Assignment Group</th>
+                <th className="p-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td className="p-3 text-center text-gray-500" colSpan={6}>
+                  <td className="p-4 text-center text-gray-500" colSpan={5}>
                     No staff profiles found.
                   </td>
                 </tr>
               ) : (
                 filtered.map((s) => (
-                  <tr key={s.id} className="border-t border-gray-200">
-                    <td className="p-2">{s.fullName}</td>
-                    <td className="p-2">{s.email}</td>
-                    <td className="p-2">{s.phone || "-"}</td>
-                    <td className="p-2">{s.assignmentGroup || "-"}</td>
-                    <td className="p-2">
-                      <span className="inline-block px-2 py-1 rounded-lg font-semibold bg-green-100 text-green-700">
-                        {s.status}
-                      </span>
+                  <tr
+                    key={s.id}
+                    className="border-t border-gray-200 hover:bg-gray-50"
+                  >
+                    <td className="p-3 font-medium text-gray-800">
+                      <div className="flex items-center gap-2">
+                        {s.profilePic ? (
+                          <img
+                            src={s.profilePic}
+                            alt=""
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-gray-200" />
+                        )}
+                        {s.fullName}
+                      </div>
+                    </td>
+                    <td className="p-3 text-gray-600">{s.email}</td>
+                    <td className="p-3 text-gray-600">{s.phone || "-"}</td>
+                    <td className="p-3 text-gray-600">
+                      {s.assignmentGroup || "-"}
+                    </td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => remove(s.id)}
+                        className="text-red-500 hover:text-red-700 hover:underline px-2 py-1 rounded"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))

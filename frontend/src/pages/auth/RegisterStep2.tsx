@@ -11,6 +11,11 @@ type ProfileDraft = {
   profilePicture?: string; // base64 for preview
 };
 
+type Hostel = {
+  id: string;
+  name: string;
+};
+
 export default function RegisterStep2() {
   const navigate = useNavigate();
   const [email, setEmail] = useState<string>("");
@@ -19,6 +24,9 @@ export default function RegisterStep2() {
   const [okMsg, setOkMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const [hostels, setHostels] = useState<Hostel[]>([]);
+  const [loadingHostels, setLoadingHostels] = useState(true);
 
   const [profile, setProfile] = useState<ProfileDraft>({
     name: "",
@@ -39,7 +47,26 @@ export default function RegisterStep2() {
     } catch {
       // ignore
     }
+
+    // Fetch Hostels
+    fetchHostels();
   }, []);
+
+  async function fetchHostels() {
+    try {
+      const { data, error } = await supabase
+        .from("hostels")
+        .select("id, name")
+        .order("name");
+
+      if (error) throw error;
+      setHostels(data || []);
+    } catch (error) {
+      console.error("Error fetching hostels:", error);
+    } finally {
+      setLoadingHostels(false);
+    }
+  }
 
   function onFileSelected(file: File) {
     setSelectedFile(file);
@@ -55,9 +82,24 @@ export default function RegisterStep2() {
     if (!email) return "Missing email from Step 1. Please go back.";
     if (!password) return "Missing password from Step 1. Please go back.";
     if (!profile.name.trim()) return "Name is required.";
-    if (profile.phone && !/^[+()0-9\-\s]{6,}$/.test(profile.phone)) {
-      return "Invalid phone number format.";
+
+    // Phone validation: Required, 10 or more digits
+    if (!profile.phone.trim()) return "Phone Number is required.";
+    const phoneDigits = profile.phone.replace(/\D/g, "");
+    if (phoneDigits.length < 10) {
+      return "Phone number must have at least 10 digits.";
     }
+
+    // Room No Validation: 6-01A (Num-NumNumAlphabet)
+    // Regex: ^\d+-\d{2}[A-Za-z]$
+    const roomRegex = /^\d+-\d{2}[A-Za-z]$/;
+    if (!profile.roomNo.trim()) return "Room No. is required.";
+    if (!roomRegex.test(profile.roomNo.trim())) {
+      return "Invalid Room No. format. Expected format: 6-01A (e.g. Level-RoomnumberAlphabet)";
+    }
+
+    if (!profile.hostelBlock) return "Please select a Hostel Block.";
+
     return null;
   }
 
@@ -128,7 +170,7 @@ export default function RegisterStep2() {
         .from("students")
         .update({
           room_no: profile.roomNo.trim(),
-          hostel_block: profile.hostelBlock.trim(),
+          hostel_block: profile.hostelBlock, // Selected from dropdown
         })
         .eq("id", userId);
 
@@ -238,11 +280,12 @@ export default function RegisterStep2() {
             <input
               type="tel"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="01XXXXXXXX"
+              placeholder="e.g., 01XXXXXXXX"
               value={profile.phone}
               onChange={(e) =>
                 setProfile((p) => ({ ...p, phone: e.target.value }))
               }
+              required
             />
           </div>
 
@@ -253,27 +296,40 @@ export default function RegisterStep2() {
             <input
               type="text"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="e.g., 6-40A"
+              placeholder="e.g., 6-01A"
               value={profile.roomNo}
               onChange={(e) =>
                 setProfile((p) => ({ ...p, roomNo: e.target.value }))
               }
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Format: 6-01A (Level-NumNumAlphabet)
+            </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Hostel Block
             </label>
-            <input
-              type="text"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="e.g., Restu M01"
-              value={profile.hostelBlock}
-              onChange={(e) =>
-                setProfile((p) => ({ ...p, hostelBlock: e.target.value }))
-              }
-            />
+            {loadingHostels ? (
+              <div className="text-sm text-gray-500">Loading hostels...</div>
+            ) : (
+              <select
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                value={profile.hostelBlock}
+                onChange={(e) =>
+                  setProfile((p) => ({ ...p, hostelBlock: e.target.value }))
+                }
+                required
+              >
+                <option value="">Select Hostel Block</option>
+                {hostels.map((h) => (
+                  <option key={h.id} value={h.name}>
+                    {h.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="md:col-span-2">
