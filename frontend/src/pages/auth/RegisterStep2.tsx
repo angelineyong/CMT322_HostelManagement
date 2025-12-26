@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import defaultAvatar from "../../assets/userAvatar.png";
 import { supabase } from "../../lib/supabaseClient";
 
 type ProfileDraft = {
