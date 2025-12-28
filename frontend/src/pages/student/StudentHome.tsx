@@ -1,10 +1,12 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { studentSummaryData, holidays, staffAvailability } from "../../data/mockData";
+import { holidays, staffAvailability } from "../../data/mockData";
+import { supabase } from "../../lib/supabaseClient";
 import HolidayBanner from "../../components/HolidayBanner";
 import pendingIcon from "../../assets/PendingComplaint.png";
 import inProgressIcon from "../../assets/InProgress.png";
 import resolvedIcon from "../../assets/Resolved.png";
 import ComplaintDetail from "./ComplaintDetail";
+
 
 // small hook to animate numbers from 0 -> target
 function useCountUp(target: number, duration = 800) {
@@ -141,6 +143,104 @@ const Calendar: React.FC = () => {
 	};
 
 const StudentHome: React.FC = () => {
+	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+	const [complaints, setComplaints] = useState<any[]>([]);
+	const [loadingComplaints, setLoadingComplaints] = useState(false);
+	// summary counts
+	const [pendingCountDB, setPendingCountDB] = useState(0);
+	const [inProgressCountDB, setInProgressCountDB] = useState(0);
+	const [resolvedCountDB, setResolvedCountDB] = useState(0);
+
+	useEffect(() => {
+	const getUser = async () => {
+		const { data } = await supabase.auth.getUser();
+		setCurrentUserId(data.user?.id ?? null);
+	};
+	getUser();
+	}, []);
+
+	useEffect(() => {
+	if (!currentUserId) return;
+
+	const load = async () => {
+		setLoadingComplaints(true);
+
+		try {
+		// Fetch complaints for current user
+		const { data: complaintsData, error } = await supabase
+			.from("complaints")
+			.select(`
+			task_id,
+			created_at,
+			facility_type_id,
+			status_id
+			`)
+			.eq("user_id", currentUserId)
+			.order("created_at", { ascending: false })
+			.limit(6);
+
+		if (error) throw error;
+
+		// Fetch lookup tables
+		const [facRes, statusRes] = await Promise.all([
+			supabase.from("facility_type").select("id, facility_type"),
+			supabase.from("status").select("id, status_name"),
+		]);
+
+		const facMap: Record<number, string> = {};
+		facRes.data?.forEach((f: any) => (facMap[f.id] = f.facility_type));
+
+		const statusMap: Record<number, string> = {};
+		statusRes.data?.forEach((s: any) => (statusMap[s.id] = s.status_name));
+
+		// Map complaints
+		const mapped = (complaintsData || []).map((c: any) => ({
+			complaintId: c.task_id,
+			dateSubmitted: new Date(c.created_at).toLocaleDateString("en-GB").replaceAll("/", "-"),
+			rawDate: c.created_at,
+			facilityCategory: facMap[c.facility_type_id] || "",
+			status: statusMap[c.status_id] || "",
+			statusId: c.status_id,
+		}));
+
+		setComplaints(mapped);
+
+		// Summary counts
+		const [pendingRes, inProgressRes, resolvedRes] = await Promise.all([
+			supabase
+				.from("complaints")
+				.select("id", { count: "exact", head: true })
+				.eq("user_id", currentUserId)
+				.eq("status_id", 2),
+
+			supabase
+				.from("complaints")
+				.select("id", { count: "exact", head: true })
+				.eq("user_id", currentUserId)
+				.eq("status_id", 3),
+
+			supabase
+				.from("complaints")
+				.select("id", { count: "exact", head: true })
+				.eq("user_id", currentUserId)
+				.eq("status_id", 4),
+			]);
+
+			setPendingCountDB(pendingRes.count ?? 0);
+			setInProgressCountDB(inProgressRes.count ?? 0);
+			setResolvedCountDB(resolvedRes.count ?? 0);
+
+		} catch (err) {
+		console.error("Failed to load student complaints:", err);
+		} finally {
+		setLoadingComplaints(false);
+		}
+	};
+
+	load();
+	}, [currentUserId]);
+
+
 	// header visibility for on-scroll animation
 	const headerRef = useRef<HTMLDivElement | null>(null);
 	const [headerVisible, setHeaderVisible] = useState(false);
@@ -159,53 +259,49 @@ const StudentHome: React.FC = () => {
 		obs.observe(headerRef.current);
 		return () => obs.disconnect();
 	}, []);
-	const [searchTerm, setSearchTerm] = useState("");
-	const [sortBy, setSortBy] = useState("");
+	// const [searchTerm, setSearchTerm] = useState("");
+	// const [sortBy, setSortBy] = useState("");
     
 	// const navigate = useNavigate();
 	const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
 
-	const pendingCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "pending").length;
-	const inProgressCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "in progress").length;
-	const resolvedCount = studentSummaryData.filter((s) => s.status.toLowerCase() === "resolved").length;
-
 	// animated count-up values
-	const pending = useCountUp(pendingCount, 900);
-	const inProgress = useCountUp(inProgressCount, 900);
-	const resolved = useCountUp(resolvedCount, 900);
+	const pending = useCountUp(pendingCountDB, 900);
+	const inProgress = useCountUp(inProgressCountDB, 900);
+	const resolved = useCountUp(resolvedCountDB, 900);
 
-	const filteredAndSortedComplaints = useMemo(() => {
-		let result = [...studentSummaryData];
+	// const filteredAndSortedComplaints = useMemo(() => {
+	// 	let result = [...complaints];
 
-		// Apply search filter
-		if (searchTerm) {
-			const term = searchTerm.toLowerCase();
-			result = result.filter(
-				(complaint) =>
-					complaint.complaintId.toLowerCase().includes(term) ||
-					complaint.facilityCategory.toLowerCase().includes(term) ||
-					complaint.status.toLowerCase().includes(term)
-			);
-		}
+	// 	// Apply search filter
+	// 	if (searchTerm) {
+	// 		const term = searchTerm.toLowerCase();
+	// 		result = result.filter(
+	// 			(complaint) =>
+	// 				complaint.complaintId.toLowerCase().includes(term) ||
+	// 				complaint.facilityCategory.toLowerCase().includes(term) ||
+	// 				complaint.status.toLowerCase().includes(term)
+	// 		);
+	// 	}
 
-		// Apply sorting
-		switch (sortBy) {
-			case "date-asc":
-				result.sort((a, b) => new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime());
-				break;
-			case "date-desc":
-				result.sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime());
-				break;
-			case "category":
-				result.sort((a, b) => a.facilityCategory.localeCompare(b.facilityCategory));
-				break;
-			case "status":
-				result.sort((a, b) => a.status.localeCompare(b.status));
-				break;
-		}
+	// 	// Apply sorting
+	// 	switch (sortBy) {
+	// 		case "date-asc":
+	// 			result.sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
+	// 			break;
+	// 		case "date-desc":
+	// 			result.sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
+	// 			break;
+	// 		case "category":
+	// 			result.sort((a, b) => a.facilityCategory.localeCompare(b.facilityCategory));
+	// 			break;
+	// 		case "status":
+	// 			result.sort((a, b) => a.status.localeCompare(b.status));
+	// 			break;
+	// 	}
 
-		return result; // Return all filtered and sorted complaints
-	}, [searchTerm, sortBy]);
+	// 	return result; 
+	// }, [complaints, searchTerm, sortBy]);
 
 	return (
 		<div className="p-2 sm:p-4 lg:p-9 mx-auto">
@@ -296,7 +392,7 @@ const StudentHome: React.FC = () => {
 						<h2 className="text-sm sm:text-xl lg:text-2xl font-semibold">Recent Complaints</h2>
 						</div>
 						
-					<div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4 mb-4">
+					{/* <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4 mb-4">
 						<div className="flex-1">
 							<input
 								type="text"
@@ -319,9 +415,9 @@ const StudentHome: React.FC = () => {
 									<option value="status">Status</option>
 								</select>
 							</div>
-						</div>
+						</div> */}
 
-					<div className="overflow-x-auto max-h-60 sm:max-h-80 overflow-y-auto">
+					<div className="overflow-x-auto">
 						<table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
 							<thead>
 						<tr className="text-left text-[8px] sm:text-xs lg:text-sm text-gray-600 bg-gray-50">
@@ -332,7 +428,7 @@ const StudentHome: React.FC = () => {
 									</tr>
 								</thead>
 							<tbody className="divide-y divide-gray-100 text-[7px] sm:text-xs lg:text-sm">
-								{filteredAndSortedComplaints.map((complaint) => (
+								{complaints.map((complaint) => (
 									<tr key={complaint.complaintId} className="hover:bg-gray-50">
 										<td className="py-1 sm:py-2 px-1 sm:px-2">{complaint.complaintId}</td>
 										<td className="py-1 sm:py-2 px-1 sm:px-2">{complaint.dateSubmitted}</td>
