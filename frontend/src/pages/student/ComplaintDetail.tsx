@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { Pickaxe, MessageSquare, Image as ImageIcon, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
-import samplePhoto from "../../assets/SampleFix.jpg";
 import FeedbackForm from "./FeedbackForm";
 
 interface ComplaintDetailProps {
@@ -64,75 +63,66 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onClose 
   };
 
   useEffect(() => {
+    if (!complaintId) return;
+
     const load = async () => {
       setLoadingComplaint(true);
       try {
-        // attempt to extract numeric id from complaintId
-        // support formats like TASK10001 (we produced TASK1000{id}), or plain numeric IDs
-        let numericId: number | null = null;
-        const taskMatch = complaintId.match(/TASK1000(\d+)$/i);
-        if (taskMatch) {
-          numericId = Number(taskMatch[1]);
-        } else {
-          const numericMatch = complaintId.match(/(\d+)$/);
-          numericId = numericMatch ? Number(numericMatch[1]) : null;
-        }
-
-        let { data: compData, error: compError } = numericId
-          ? await supabase.from("complaint").select("*").eq("id", numericId).limit(1).single()
-          : await supabase.from("complaint").select("*").eq("complaint_id", complaintId).limit(1).single();
-
-        if (compError) throw compError;
-
-        const c = compData as any;
-
-        // fetch facility and status names (handle multiple possible column names)
-        const { data: facData } = await supabase
-          .from("facility_type")
-          .select("*")
-          .eq("id", c.facility_type)
-          .limit(1)
+        // Get complaint by task_id
+        const { data: c, error } = await supabase
+          .from("complaints")
+          .select(`
+            id,
+            task_id,
+            user_id,
+            facility_type_id,
+            description,
+            status_id,
+            created_at,
+            resolved_at,
+            resolved_evidence_url
+          `)
+          .eq("task_id", complaintId)
           .single();
 
-        const { data: statData } = await supabase
-          .from("status")
-          .select("*")
-          .eq("id", c.status)
-          .limit(1)
-          .single();
+        if (error || !c) throw error;
 
-        const facilityName = facData?.facility_type ?? facData?.name ?? facData?.label ?? "";
-        const statusName = statData?.status_name ?? statData?.name ?? statData?.label ?? String(c.status ?? "");
-
-        const roomNumber = c.room_number ?? c.roomNumber ?? c.room_no ?? c.room ?? "";
-        const location = c.location ?? c.loc ?? "";
-        const dateIso = c.created_at ?? c.createdAt ?? null;
-        const updatedAtIso = c.updated_at ?? c.updatedAt ?? null;
+        // Load lookups in parallel
+        const [
+          facilityRes,
+          statusRes,
+          studentRes,
+          commentRes,
+        ] = await Promise.all([
+          supabase.from("facility_type").select("id, facility_type").eq("id", c.facility_type_id).single(),
+          supabase.from("status").select("id, status_name").eq("id", c.status_id).single(),
+          supabase.from("students").select("hostel_block, room_no").eq("id", c.user_id).single(),
+          supabase.from("complaint_comments").select("comment").eq("complaint_id", c.id).limit(1).single(),
+        ]);
 
         setComplaint({
-          numericId: c.id,
-          complaintId: numericId ? `TASK1000${numericId}` : complaintId,
-          facilityCategory: facilityName,
-          location,
-          roomNumber,
-          dateSubmitted: formatDate(dateIso),
-          updatedAtIso,
-          status: statusName,
+          complaintId: c.task_id,
+          facilityCategory: facilityRes.data?.facility_type || "",
+          location: studentRes.data?.hostel_block || "",
+          roomNumber: studentRes.data?.room_no || "",
+          dateSubmitted: formatDate(c.created_at),
+          updatedAtIso: c.resolved_at,
+          status: statusRes.data?.status_name || "",
           description: c.description || "",
-          feedback: c.feedback === true,
+          resolvedEvidenceUrl: c.resolved_evidence_url || "",
+          staffComment: commentRes.data?.comment || null,
         });
       } catch (err) {
-        // eslint-disable-next-line no-console
         console.error("Error loading complaint detail:", err);
         setComplaint(null);
-      }
-      finally {
+      } finally {
         setLoadingComplaint(false);
       }
     };
 
     load();
   }, [complaintId]);
+
 
   if (loadingComplaint) {
     return (
@@ -269,7 +259,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onClose 
                     </p>
 
                     {/* Collapsible: In Progress Comment */}
-                    {isActive && step.label === "In Progress" && (
+                    {isActive && step.label === "In Progress" && complaint.staffComment && (
                       <div className="mt-3 ml-1">
                         <button
                           onClick={() => setShowComment(!showComment)}
@@ -286,9 +276,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onClose 
 
                         {showComment && (
                           <div className="mt-2 border border-blue-300 bg-blue-50/70 backdrop-blur-sm rounded-lg p-3 text-xs text-gray-700">
-                            <strong>Staff Comment:</strong> This issue involves electrical
-                            wiring and has been forwarded to the maintenance department
-                            for specialized handling.
+                            <strong>Staff Comment:</strong> {complaint.staffComment}
                           </div>
                         )}
                       </div>
@@ -310,10 +298,10 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onClose 
                           )}
                         </button>
 
-                        {showPhoto && (
+                        {complaint.resolvedEvidenceUrl && showPhoto && (
                           <div className="mt-3">
                             <img
-                              src={samplePhoto}
+                              src={complaint.resolvedEvidenceUrl}
                               alt="Resolved proof"
                               className="w-60 h-36 rounded-lg border border-gray-300 shadow-sm object-cover"
                             />
