@@ -37,53 +37,48 @@ const CreateComplaint: React.FC = () => {
 
       setLoading(true);
       try {
-        const BUCKET = (import.meta.env.VITE_SUPABASE_BUCKET as string) || "complaint";
+        const BUCKET = "complaints"; // Use the new bucket
         let publicUrl: string | null = null;
 
         const insertPayload: any = {
-          facility_type: Number(facilityType),
+          facility_type_id: Number(facilityType), // FK to facility_type
           description: description.trim(),
-          status: 1, // initial status (Submitted)
+          status_id: 1, // Default ID for 'Submitted'
         };
 
-        // attach authenticated user id when available (safe no-op if not signed in)
+        // attach authenticated user id when available
         try {
-          // supabase.auth.getUser() returns { data: { user } } in latest client
-          // fall back safely if method not available
-          const userResult = await supabase.auth.getUser?.();
-          const user = userResult?.data?.user ?? null;
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
           if (user && user.id) insertPayload.user_id = user.id;
         } catch (e) {
-          // ignore auth errors here; insertion will proceed without user_id
+          // ignore auth errors
         }
 
         if (image) {
-          const fileName = `${Date.now()}_${image.name}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const fileName = `${Date.now()}_${image.name.replace(/\s+/g, "_")}`; // Clean filename
+          const { error: uploadError } = await supabase.storage
             .from(BUCKET)
-            .upload(fileName, image as File, { cacheControl: "3600", upsert: false });
+            .upload(fileName, image, { cacheControl: "3600", upsert: false });
 
           if (uploadError) {
-            // stop and surface upload error instead of inserting without image
-            // eslint-disable-next-line no-console
             console.error("Supabase storage upload error:", uploadError);
             setError(`Image upload failed: ${uploadError.message}`);
             setLoading(false);
             return;
           }
 
-          // uploadData.path contains the stored path; also get a public URL
-          const uploadedPath = (uploadData as any)?.path ?? fileName;
-          const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(uploadedPath);
-          publicUrl = (urlData as any)?.publicUrl ?? null;
-          // include stored path in DB so you can later verify and generate URL server-side if needed
-          insertPayload.image_path = uploadedPath;
+          const { data: urlData } = supabase.storage
+            .from(BUCKET)
+            .getPublicUrl(fileName);
+          publicUrl = urlData?.publicUrl ?? null;
         }
 
         if (publicUrl) insertPayload.image_url = publicUrl;
 
-        const { data: inserted, error: insertError } = await supabase
-          .from("complaint")
+        const { error: insertError } = await supabase
+          .from("complaints") // Plural table name
           .insert([insertPayload]);
 
         if (insertError) {
@@ -98,7 +93,6 @@ const CreateComplaint: React.FC = () => {
         setDescription("");
         setImage(null);
       } catch (err: any) {
-        // eslint-disable-next-line no-console
         console.error("Error submitting complaint:", err);
         setError(err?.message || "Failed to submit complaint.");
       } finally {
@@ -110,7 +104,9 @@ const CreateComplaint: React.FC = () => {
   useEffect(() => {
     const loadFacilityTypes = async () => {
       try {
-        const { data, error } = await supabase.from("facility_type").select("*");
+        const { data, error } = await supabase
+          .from("facility_type")
+          .select("*");
         if (error) throw error;
         setFacilityTypes(data || []);
       } catch (err) {
@@ -125,7 +121,8 @@ const CreateComplaint: React.FC = () => {
   // derive options from DB; filter by numeric category_id: 1 = Individual, 2 = Shared
   const facilityOptions = facilityTypes.filter((f) => {
     if (!category) return false;
-    const catId = f.category_id ?? f.categoryId ?? (f.category ? Number(f.category) : null);
+    const catId =
+      f.category_id ?? f.categoryId ?? (f.category ? Number(f.category) : null);
     if (category === "Individual") return Number(catId) === 1;
     if (category === "Shared") return Number(catId) === 2;
     return false;
@@ -133,7 +130,6 @@ const CreateComplaint: React.FC = () => {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
-      
       {/* LEFT SECTION */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-indigo-50 p-4 sm:p-8 lg:p-10">
         <img
@@ -152,15 +148,22 @@ const CreateComplaint: React.FC = () => {
           Create a New Complaint
         </h1>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-6 bg-white p-4 sm:p-6 lg:p-8 rounded-2xl shadow-lg">
-          
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4 sm:gap-6 bg-white p-4 sm:p-6 lg:p-8 rounded-2xl shadow-lg"
+        >
           {/* Category */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2 sm:mb-3 text-sm lg:text-base">Category*</label>
+            <label className="block text-gray-700 font-medium mb-2 sm:mb-3 text-sm lg:text-base">
+              Category*
+            </label>
             <div className="flex gap-2 sm:gap-4">
               <button
                 type="button"
-                onClick={() => { setCategory("Individual"); setFacilityType(""); }}
+                onClick={() => {
+                  setCategory("Individual");
+                  setFacilityType("");
+                }}
                 className={`flex-1 py-2 sm:py-3 rounded-lg font-semibold border transition-all transform text-sm sm:text-base ${
                   category === "Individual"
                     ? "bg-indigo-600 text-white border-indigo-600 scale-105"
@@ -172,7 +175,10 @@ const CreateComplaint: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => { setCategory("Shared"); setFacilityType(""); }}
+                onClick={() => {
+                  setCategory("Shared");
+                  setFacilityType("");
+                }}
                 className={`flex-1 py-2 sm:py-3 rounded-lg font-semibold border transition-all text-sm sm:text-base ${
                   category === "Shared"
                     ? "bg-indigo-600 text-white border-indigo-600"
@@ -186,7 +192,9 @@ const CreateComplaint: React.FC = () => {
 
           {/* Facility Type */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">Facility Type</label>
+            <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">
+              Facility Type
+            </label>
             <select
               value={facilityType}
               onChange={(e) => setFacilityType(e.target.value)}
@@ -197,20 +205,27 @@ const CreateComplaint: React.FC = () => {
               required
             >
               <option value="">
-                {category ? "Select Facility" : "Please choose a category first"}
+                {category
+                  ? "Select Facility"
+                  : "Please choose a category first"}
               </option>
 
               {facilityOptions.map((item: any) => (
                 <option key={item.id} value={String(item.id)}>
-                  {item.facility_type ?? item.name ?? item.label ?? `Type ${item.id}`}
+                  {item.facility_type ??
+                    item.name ??
+                    item.label ??
+                    `Type ${item.id}`}
                 </option>
               ))}
             </select>
           </div>
- 
+
           {/* Description */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">Issue Description</label>
+            <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">
+              Issue Description
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -234,7 +249,9 @@ const CreateComplaint: React.FC = () => {
             />
 
             {image && (
-              <p className="text-xs sm:text-sm text-gray-500 mt-2">Selected: {image.name}</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-2">
+                Selected: {image.name}
+              </p>
             )}
           </div>
 
@@ -243,11 +260,14 @@ const CreateComplaint: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`mt-2 sm:mt-4 ${loading ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'} text-white py-2 sm:py-3 rounded-lg text-sm sm:text-lg font-semibold transition-all duration-300 ${loading ? '' : 'hover:scale-105 hover:shadow-lg'}`}
+            className={`mt-2 sm:mt-4 ${
+              loading ? "bg-gray-400" : "bg-indigo-600 hover:bg-indigo-700"
+            } text-white py-2 sm:py-3 rounded-lg text-sm sm:text-lg font-semibold transition-all duration-300 ${
+              loading ? "" : "hover:scale-105 hover:shadow-lg"
+            }`}
           >
             {loading ? "Submitting..." : "Submit Complaint"}
           </button>
-
         </form>
       </div>
 
@@ -300,21 +320,24 @@ const CreateComplaint: React.FC = () => {
 
           <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl text-center w-11/12 sm:w-90 max-w-sm">
-
               <div className="flex justify-center mb-4 relative w-20 h-20 mx-auto">
                 <div className="wheel-loader absolute"></div>
-                  <div className="tick-circle absolute">
-                    <svg
-                      className="tick-icon"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
+                <div className="tick-circle absolute">
+                  <svg
+                    className="tick-icon"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
                 </div>
+              </div>
 
               <h3 className="text-xl sm:text-2xl font-bold text-green-600 mb-2">
                 Complaint Submitted!
@@ -330,12 +353,10 @@ const CreateComplaint: React.FC = () => {
               >
                 Close
               </button>
-
             </div>
           </div>
         </>
       )}
-
     </div>
   );
 };
