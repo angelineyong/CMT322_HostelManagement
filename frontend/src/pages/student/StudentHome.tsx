@@ -5,6 +5,7 @@ import HolidayBanner from "../../components/HolidayBanner";
 import pendingIcon from "../../assets/PendingComplaint.png";
 import inProgressIcon from "../../assets/InProgress.png";
 import resolvedIcon from "../../assets/Resolved.png";
+import submittedIcon from "../../assets/Submitted.png";
 import ComplaintDetail from "./ComplaintDetail";
 
 
@@ -145,8 +146,10 @@ const Calendar: React.FC = () => {
 const StudentHome: React.FC = () => {
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 	const [complaints, setComplaints] = useState<any[]>([]);
+	const [fullName, setFullName] = useState<string>("");
 	const [loadingComplaints, setLoadingComplaints] = useState(false);
 	// summary counts
+	const [submittedCountDB, setSubmittedCountDB] = useState(0);
 	const [pendingCountDB, setPendingCountDB] = useState(0);
 	const [inProgressCountDB, setInProgressCountDB] = useState(0);
 	const [resolvedCountDB, setResolvedCountDB] = useState(0);
@@ -158,6 +161,28 @@ const StudentHome: React.FC = () => {
 	};
 	getUser();
 	}, []);
+
+	useEffect(() => {
+		if (!currentUserId) return;
+
+		const loadProfile = async () => {
+			const { data, error } = await supabase
+			.from("profiles")
+			.select("full_name")
+			.eq("id", currentUserId)
+			.single();
+
+			if (error) {
+			console.error("Failed to load profile:", error);
+			return;
+			}
+
+			setFullName(data?.full_name || "");
+		};
+
+		loadProfile();
+		}, [currentUserId]);
+
 
 	useEffect(() => {
 	if (!currentUserId) return;
@@ -206,7 +231,13 @@ const StudentHome: React.FC = () => {
 		setComplaints(mapped);
 
 		// Summary counts
-		const [pendingRes, inProgressRes, resolvedRes] = await Promise.all([
+		const [submittedRes, pendingRes, inProgressRes, resolvedRes] = await Promise.all([
+			supabase
+				.from("complaints")
+				.select("id", { count: "exact", head: true })
+				.eq("user_id", currentUserId)
+				.eq("status_id", 1),
+
 			supabase
 				.from("complaints")
 				.select("id", { count: "exact", head: true })
@@ -225,7 +256,7 @@ const StudentHome: React.FC = () => {
 				.eq("user_id", currentUserId)
 				.eq("status_id", 4),
 			]);
-
+			setSubmittedCountDB(submittedRes.count ?? 0);
 			setPendingCountDB(pendingRes.count ?? 0);
 			setInProgressCountDB(inProgressRes.count ?? 0);
 			setResolvedCountDB(resolvedRes.count ?? 0);
@@ -266,6 +297,7 @@ const StudentHome: React.FC = () => {
 	const [selectedComplaintId, setSelectedComplaintId] = useState<string | null>(null);
 
 	// animated count-up values
+	const submitted = useCountUp(submittedCountDB, 900);
 	const pending = useCountUp(pendingCountDB, 900);
 	const inProgress = useCountUp(inProgressCountDB, 900);
 	const resolved = useCountUp(resolvedCountDB, 900);
@@ -345,16 +377,29 @@ const StudentHome: React.FC = () => {
 					<div className="text-indigo-500 font-medium mb-4 sm:mb-8 lg:mb-12 text-xs sm:text-sm lg:text-base">Creating comfort through your feedback.</div>
 				</div>
 			</div>				
-			<h1 className="text-lg sm:text-2xl lg:text-3xl font-semibold mb-4 sm:mb-5 text-left px-4 sm:px-0">Welcome back</h1>
+			<h1 className="text-lg sm:text-2xl lg:text-4xl font-semibold mb-4 sm:mb-5 text-left px-4 sm:px-0">Welcome back{fullName ? `, ${fullName}` : ""}</h1>
 				</div>
 			</div>
 
 			
 
-		{/* Top three summary boxes */}
-		<div className="flex gap-1 sm:gap-3 lg:gap-6 overflow-x-auto sm:grid sm:grid-cols-3 mb-4 sm:mb-6 lg:mb-8 scrollbar-hide px-4 sm:px-0">
+		{/* summary boxes */}
+		<div className="flex gap-1 sm:gap-3 lg:gap-6 overflow-x-auto sm:grid sm:grid-cols-4 mb-4 sm:mb-6 lg:mb-8 scrollbar-hide px-4 sm:px-0">
+			<div className="p-2 sm:p-3 lg:p-4 rounded-lg shadow flex items-center justify-between bg-pink-100 transition-transform duration-300 hover:scale-105 min-w-[80px] sm:min-w-auto flex-shrink-0 sm:flex-shrink">
+				<div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
+					<img src={submittedIcon} alt="submitted" className="w-4 sm:w-8 lg:w-10 h-4 sm:h-8 lg:h-10 rounded-md object-cover" />
+					<div>
+					<div className="text-[10px] sm:text-sm lg:text-lg font-semibold text-pink-800 whitespace-nowrap">
+						Submitted
+					</div>
+					<div className="text-xs sm:text-3xl lg:text-6xl font-bold text-pink-900 mt-0.5">
+						{submitted}
+					</div>
+					</div>
+				</div>
+			</div>
 			<div className="p-2 sm:p-3 lg:p-4 rounded-lg shadow flex items-center justify-between bg-amber-100 transition-transform duration-300 hover:scale-105 min-w-[80px] sm:min-w-auto flex-shrink-0 sm:flex-shrink">
-				<div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+				<div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
 					<img src={pendingIcon} alt="pending" className="w-4 sm:w-8 lg:w-10 h-4 sm:h-8 lg:h-10 rounded-md object-cover" />
 					<div>
 						<div className="text-[10px] sm:text-sm lg:text-lg font-semibold text-amber-800 whitespace-nowrap">Pending</div>
@@ -364,7 +409,7 @@ const StudentHome: React.FC = () => {
 			</div>
 
 			<div className="p-2 sm:p-3 lg:p-4 rounded-lg shadow flex items-center justify-between bg-blue-100 transition-transform duration-300 hover:scale-105 min-w-[80px] sm:min-w-auto flex-shrink-0 sm:flex-shrink">
-				<div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+				<div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
 					<img src={inProgressIcon} alt="in-progress" className="w-4 sm:w-8 lg:w-10 h-4 sm:h-8 lg:h-10 rounded-md object-cover" />
 					<div>
 						<div className="text-[10px] sm:text-sm lg:text-lg font-semibold text-blue-800 whitespace-nowrap">In Progress</div>
@@ -374,7 +419,7 @@ const StudentHome: React.FC = () => {
 			</div>
 
 			<div className="p-2 sm:p-3 lg:p-4 rounded-lg shadow flex items-center justify-between bg-green-100 transition-transform duration-300 hover:scale-105 min-w-[80px] sm:min-w-auto flex-shrink-0 sm:flex-shrink">
-				<div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+				<div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
 					<img src={resolvedIcon} alt="resolved" className="w-4 sm:w-8 lg:w-10 h-4 sm:h-8 lg:h-10 rounded-md object-cover" />
 					<div>
 						<div className="text-[10px] sm:text-sm lg:text-lg font-semibold text-green-800 whitespace-nowrap">Resolved</div>
@@ -389,7 +434,7 @@ const StudentHome: React.FC = () => {
 			<div className="lg:col-span-2 transition-transform duration-300 hover:scale-105">
 				<div className="bg-white rounded-lg shadow p-3 sm:p-5 lg:p-7">
 					<div className="flex items-center justify-between mb-4 sm:mb-5 lg:mb-7">
-						<h2 className="text-sm sm:text-xl lg:text-2xl font-semibold">Recent Complaints</h2>
+						<h2 className="text-sm sm:text-xl lg:text-3xl font-semibold">Recent Complaints</h2>
 						</div>
 						
 					{/* <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4 mb-4">
@@ -444,7 +489,7 @@ const StudentHome: React.FC = () => {
 														? "bg-blue-100 text-blue-700 border border-blue-400 hover:bg-blue-200"
 														: complaint.status === "Pending"
 														? "bg-amber-100 text-amber-700 border border-amber-400 hover:bg-amber-200"
-														: "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
+														: "bg-pink-100 text-pink-700 border border-pink-300 hover:bg-pink-200"
 													}`}
 												>
 												{complaint.status}
@@ -459,10 +504,10 @@ const StudentHome: React.FC = () => {
 					</div>
 				</div>
 
-			<div className="space-y-3 sm:space-y-4">
+			<div className="space-y-5 sm:space-y-7">
 				{/* Staff status box above calendar */}
-				<div className="bg-white rounded-lg shadow p-3 sm:p-4 flex items-center gap-3 sm:gap-4 transition-transform duration-300 hover:scale-105">
-						<div className={`w-3 h-3 rounded-full ${staffAvailability.statusType === "available" ? "bg-green-500" : staffAvailability.statusType === "out-of-office" ? "bg-yellow-500" : staffAvailability.statusType === "unavailable" ? "bg-red-500" : "bg-gray-400"}`} />
+				<div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6 flex items-center gap-3 sm:gap-4 transition-transform duration-300 hover:scale-105">
+						<div className={`w-4 h-4 rounded-full ${staffAvailability.statusType === "available" ? "bg-green-500" : staffAvailability.statusType === "out-of-office" ? "bg-yellow-500" : staffAvailability.statusType === "unavailable" ? "bg-red-500" : "bg-gray-400"}`} />
 						<div>
 					<div className="text-xs sm:text-sm text-gray-500">Staff Status</div>
 					<div className="text-sm sm:text-base font-semibold">{staffAvailability.status} <span className="text-xs sm:text-sm text-gray-400">— {staffAvailability.note}</span></div>

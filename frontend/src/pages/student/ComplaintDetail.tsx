@@ -194,7 +194,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onClose 
                         ? "text-blue-600"
                         : complaint.status === "Pending"
                         ? "text-amber-600"
-                        : "text-gray-600"
+                        : "text-pink-600"
                     }`}
                   >
                     {complaint.status}
