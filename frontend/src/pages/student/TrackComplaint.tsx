@@ -20,8 +20,6 @@ const TrackComplaint: React.FC = () => {
   const feedbackId = searchParams.get("feedbackId");
   const navigate = useNavigate();
 
-  
-
   // Auto-open feedback form if feedbackId exists in URL
   useEffect(() => {
     if (feedbackId) {
@@ -41,18 +39,36 @@ const TrackComplaint: React.FC = () => {
     return `${dd}-${mm}-${yyyy}`;
   };
 
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserId(data.user?.id ?? null);
+    });
+  }, []);
+
   // Fetch complaints and related lookup tables from Supabase
   useEffect(() => {
     const load = async () => {
       setLoadingComplaints(true);
       try {
-        // capture full response for debugging
-        const complaintsRes: any = await supabase
-          .from("complaint")
-          .select("*")
+
+        if (!currentUserId) return;
+
+        const complaintsRes = await supabase
+          .from("complaints")
+          .select(`
+            task_id,
+            user_id,
+            facility_type_id,
+            description,
+            feedback,
+            status_id,
+            created_at
+          `)
+          .eq("user_id", currentUserId)
           .order("created_at", { ascending: false });
 
-        // (removed debug logging)
 
         if (complaintsRes.error) {
           setFetchError((complaintsRes.error as any)?.message || String(complaintsRes.error));
@@ -60,34 +76,36 @@ const TrackComplaint: React.FC = () => {
         }
         setFetchError(null);
 
-        const complaintsData = complaintsRes.data;
-
-        const facilitiesRes: any = await supabase.from("facility_type").select("id, facility_type");
-        const statusesRes: any = await supabase.from("status").select("id, status_name");
-
-        // (removed debug logging)
-
-        const facilities = facilitiesRes.data;
-        const statuses = statusesRes.data;
+        const [facilitiesRes, statusesRes, studentsRes] = await Promise.all([
+          supabase.from("facility_type").select("id, facility_type"),
+          supabase.from("status").select("id, status_name"),
+          supabase.from("students").select("id, room_no"),
+        ]);
 
         const facMap: Record<number, string> = {};
-        (facilities || []).forEach((f: any) => (facMap[f.id] = f.facility_type));
+        (facilitiesRes.data || []).forEach((f: any) => {
+          facMap[f.id] = f.facility_type;
+        });
 
         const statusMap: Record<number, string> = {};
-        (statuses || []).forEach((s: any) => (statusMap[s.id] = s.status_name));
+        (statusesRes.data || []).forEach((s: any) => {
+          statusMap[s.id] = s.status_name;
+        });
 
-        // (removed debug logging)
+        const studentRoomMap: Record<string, string> = {};
+        (studentsRes.data || []).forEach((s: any) => {
+          studentRoomMap[s.id] = s.room_no;
+        });
 
-        const mapped = (complaintsData || []).map((c: any) => {
-          const numeric = c.id ?? c.complaint_id ?? c.complaintId ?? null;
+        const mapped = (complaintsRes.data || []).map((c: any) => {
           return {
-            numericId: numeric,
-            complaintId: numeric ? `TASK1000${numeric}` : "",
-            facilityCategory: facMap[c.facility_type] || "",
-            location: c.location || "",
-            dateSubmitted: c.created_at ? formatDate(c.created_at) : "",
-            status: statusMap[c.status] || String(c.status),
-            statusId: c.status,
+            complaintId: c.task_id, 
+            facilityCategory: facMap[c.facility_type_id] || "",
+            location: studentRoomMap[c.user_id] || "",
+            dateSubmitted: formatDate(c.created_at),
+            rawDate: c.created_at,
+            status: statusMap[c.status_id] || "",
+            statusId: c.status_id,
             feedback: c.feedback === true,
             description: c.description,
           };
@@ -104,7 +122,7 @@ const TrackComplaint: React.FC = () => {
     };
 
     load();
-  }, []);
+  }, [currentUserId]);
 
   // Handle feedback submission
   const handleFeedbackSubmit = (complaintId: string, feedback: string, rating: number) => {
@@ -124,40 +142,52 @@ const TrackComplaint: React.FC = () => {
     let result = [...complaints];
     const term = searchTerm.toLowerCase();
 
+    // ---------- FILTER ----------
     if (searchTerm) {
-      result = result.filter(
-        (c) =>
-          (c.complaintId || "").toLowerCase().includes(term) ||
-          (c.facilityCategory || "").toLowerCase().includes(term) ||
-          (c.location || "").toLowerCase().includes(term) ||
-          (c.roomNumber || "").toLowerCase().includes(term) ||
-          (c.status || "").toLowerCase().includes(term)
+      result = result.filter((c) =>
+        (c.complaintId || "").toLowerCase().includes(term) ||
+        (c.facilityCategory || "").toLowerCase().includes(term) ||
+        (c.location || "").toLowerCase().includes(term) ||   // room_no
+        (c.status || "").toLowerCase().includes(term)
       );
     }
 
+    // ---------- SORT ----------
     switch (sortBy) {
       case "date-asc":
         result.sort(
           (a, b) =>
-            new Date(a.dateSubmitted).getTime() - new Date(b.dateSubmitted).getTime()
+            new Date(a.rawDate || "").getTime() -
+            new Date(b.rawDate || "").getTime()
         );
         break;
+
       case "date-desc":
         result.sort(
           (a, b) =>
-            new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime()
+            new Date(b.rawDate || "").getTime() -
+            new Date(a.rawDate || "").getTime()
         );
         break;
-      case "category":
-        result.sort((a, b) => a.facilityCategory.localeCompare(b.facilityCategory));
+
+      case "type":
+        result.sort((a, b) =>
+          String(a.facilityCategory || "").localeCompare(
+            String(b.facilityCategory || "")
+          )
+        );
         break;
+
       case "status":
-        result.sort((a, b) => a.status.localeCompare(b.status));
+        result.sort((a, b) =>
+          String(a.status || "").localeCompare(String(b.status || ""))
+        );
         break;
     }
 
     return result;
   }, [searchTerm, sortBy, complaints]);
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-2 sm:p-4 lg:p-6">
@@ -193,7 +223,7 @@ const TrackComplaint: React.FC = () => {
               <option value="">Sort by Date ↓</option>
               <option value="date-asc">Date (Oldest)</option>
               <option value="date-desc">Date (Newest)</option>
-              <option value="category">Facility Category</option>
+              <option value="type">Facility</option>
               <option value="status">Status</option>
             </select>
           </div>

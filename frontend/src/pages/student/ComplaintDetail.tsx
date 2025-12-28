@@ -30,11 +30,6 @@ const steps = [
     description:
       "The issue has been resolved.",
   },
-//   {
-//     label: "Feedback",
-//     description:
-//       "You can provide feedback about the fix or service quality.",
-//   },
 ];
 
 const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onClose }) => {
