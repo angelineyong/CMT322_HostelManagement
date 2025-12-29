@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { login } from "../../../utils/auth";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -9,23 +9,44 @@ export default function Login() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
     setLoading(true);
-    const res = login(email, password);
-    setLoading(false);
-    if (!res.ok) {
-      setErr(res.error);
-      return;
-    }
-    const role = res.user.role;
-    if (role === "admin") {
-      navigate("/admin/dashboard");
-    } else if (role === "staff") {
-      navigate("/staff/");
-    } else {
-      navigate("/student/");
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Fetch role to determine redirect
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profileError) {
+          // Fallback or error
+          console.error(profileError);
+          navigate("/student/"); // Default fallback
+        } else {
+          if (profile.role === "admin") {
+            navigate("/admin/dashboard");
+          } else if (profile.role === "staff") {
+            navigate("/staff/");
+          } else {
+            navigate("/student/");
+          }
+        }
+      }
+    } catch (err: any) {
+      setErr(err.message || "Login failed");
+      setLoading(false);
     }
   };
 
@@ -51,7 +72,7 @@ export default function Login() {
             <input
               type="email"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="you@example.com"
+              placeholder="any *.usm.my subdomains"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

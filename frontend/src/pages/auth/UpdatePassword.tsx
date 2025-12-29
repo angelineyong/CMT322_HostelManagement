@@ -1,12 +1,22 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 
-export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
+export default function UpdatePassword() {
+  const navigate = useNavigate();
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check if we have a session (the link should log us in automatically via PKCE)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        setErr("Invalid or expired reset link. Please try again.");
+      }
+    });
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,13 +25,16 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
+      const { error } = await supabase.auth.updateUser({
+        password: password,
       });
+
       if (error) throw error;
-      setOkMsg("Password reset link sent to your email.");
+
+      setOkMsg("Password updated successfully! Redirecting...");
+      setTimeout(() => navigate("/auth/login"), 2000);
     } catch (error: any) {
-      setErr(error.message || "Failed to send reset email.");
+      setErr(error.message || "Failed to update password.");
     } finally {
       setLoading(false);
     }
@@ -31,10 +44,10 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
         <h1 className="text-2xl font-bold text-purple-700 mb-2">
-          Reset Password
+          Set New Password
         </h1>
         <p className="text-gray-600 text-sm mb-6">
-          Enter your registered email and a new password.
+          Enter your new password below.
         </p>
 
         {err && (
@@ -51,14 +64,15 @@ export default function ForgotPassword() {
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              New Password
             </label>
             <input
-              type="email"
+              type="password"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="any *.usm.my subdomains"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="At least 6 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
               required
             />
           </div>
@@ -68,18 +82,9 @@ export default function ForgotPassword() {
             disabled={loading}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg transition-colors"
           >
-            {loading ? "Sending..." : "Send Reset Link"}
+            {loading ? "Updating..." : "Update Password"}
           </button>
         </form>
-
-        <div className="flex justify-between items-center text-sm mt-4">
-          <Link className="text-purple-700 hover:underline" to="/auth/login">
-            Back to Login
-          </Link>
-          <Link className="text-purple-700 hover:underline" to="/auth/register">
-            Create account
-          </Link>
-        </div>
       </div>
     </div>
   );

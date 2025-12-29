@@ -1,7 +1,6 @@
-import React, { useState } from "react";
-import { studentSummaryData } from "../../data/mockData";
-import { Pickaxe, MessageSquare, Image as ImageIcon, MessageCircle, ChevronDown, ChevronUp} from "lucide-react";
-import samplePhoto from "../../assets/SampleFix.jpg";
+import React, { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import { Pickaxe, MessageSquare, Image as ImageIcon, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import FeedbackForm from "./FeedbackForm";
 
 interface ComplaintDetailProps {
@@ -30,26 +29,110 @@ const steps = [
     description:
       "The issue has been resolved.",
   },
-//   {
-//     label: "Feedback",
-//     description:
-//       "You can provide feedback about the fix or service quality.",
-//   },
 ];
 
-const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
-  complaintId,
-  onClose,
-}) => {
+const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onClose }) => {
   if (!complaintId) return null;
 
-  const complaint = studentSummaryData.find(
-    (item) => item.complaintId === complaintId
-  );
-
+  const [complaint, setComplaint] = useState<any | null>(null);
+  const [loadingComplaint, setLoadingComplaint] = useState<boolean>(true);
   const [showComment, setShowComment] = useState(false);
-  const [showPhoto, setShowPhoto] = useState(false)
+  const [showPhoto, setShowPhoto] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
+  const formatDateTime = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+  };
+
+  useEffect(() => {
+    if (!complaintId) return;
+
+    const load = async () => {
+      setLoadingComplaint(true);
+      try {
+        // Get complaint by task_id
+        const { data: c, error } = await supabase
+          .from("complaints")
+          .select(`
+            id,
+            task_id,
+            user_id,
+            facility_type_id,
+            description,
+            status_id,
+            created_at,
+            resolved_at,
+            resolved_evidence_url
+          `)
+          .eq("task_id", complaintId)
+          .single();
+
+        if (error || !c) throw error;
+
+        // Load lookups in parallel
+        const [
+          facilityRes,
+          statusRes,
+          studentRes,
+          commentRes,
+        ] = await Promise.all([
+          supabase.from("facility_type").select("id, facility_type").eq("id", c.facility_type_id).single(),
+          supabase.from("status").select("id, status_name").eq("id", c.status_id).single(),
+          supabase.from("students").select("hostel_block, room_no").eq("id", c.user_id).single(),
+          supabase.from("complaint_comments").select("comment").eq("complaint_id", c.id).limit(1).single(),
+        ]);
+
+        setComplaint({
+          complaintId: c.task_id,
+          facilityCategory: facilityRes.data?.facility_type || "",
+          location: studentRes.data?.hostel_block || "",
+          roomNumber: studentRes.data?.room_no || "",
+          dateSubmitted: formatDate(c.created_at),
+          updatedAtIso: c.resolved_at,
+          status: statusRes.data?.status_name || "",
+          description: c.description || "",
+          resolvedEvidenceUrl: c.resolved_evidence_url || "",
+          staffComment: commentRes.data?.comment || null,
+        });
+      } catch (err) {
+        console.error("Error loading complaint detail:", err);
+        setComplaint(null);
+      } finally {
+        setLoadingComplaint(false);
+      }
+    };
+
+    load();
+  }, [complaintId]);
+
+
+  if (loadingComplaint) {
+    return (
+      <div className="fixed inset-0 bg-transparent bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="p-6">
+          <p className="text-gray-700">Loading complaint...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!complaint) {
     return (
@@ -68,13 +151,10 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
   }
 
   // If status is Resolved, also show Feedback as next active stage
-  let currentStep = steps.findIndex(
-    (s) => s.label.toLowerCase() === complaint.status.toLowerCase()
-  );
+  let currentStep = steps.findIndex((s) => s.label.toLowerCase() === complaint.status.toLowerCase());
   if (complaint.status === "Resolved") {
     currentStep = steps.length - 1; // include Feedback step
   }
-
 
   return (
     <div className="fixed inset-0 bg-transparent bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -114,7 +194,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                         ? "text-blue-600"
                         : complaint.status === "Pending"
                         ? "text-amber-600"
-                        : "text-gray-600"
+                        : "text-pink-600"
                     }`}
                   >
                     {complaint.status}
@@ -171,11 +251,15 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                         isActive ? "text-gray-700" : "text-gray-400"
                       }`}
                     >
-                      {step.description}
+                      {step.label === "Resolved" && complaint.updatedAtIso
+                        ? `${step.description} Resolved on ${formatDateTime(
+                            complaint.updatedAtIso
+                          )}`
+                        : step.description}
                     </p>
 
                     {/* Collapsible: In Progress Comment */}
-                    {isActive && step.label === "In Progress" && (
+                    {isActive && step.label === "In Progress" && complaint.staffComment && (
                       <div className="mt-3 ml-1">
                         <button
                           onClick={() => setShowComment(!showComment)}
@@ -192,9 +276,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
 
                         {showComment && (
                           <div className="mt-2 border border-blue-300 bg-blue-50/70 backdrop-blur-sm rounded-lg p-3 text-xs text-gray-700">
-                            <strong>Staff Comment:</strong> This issue involves electrical
-                            wiring and has been forwarded to the maintenance department
-                            for specialized handling.
+                            <strong>Staff Comment:</strong> {complaint.staffComment}
                           </div>
                         )}
                       </div>
@@ -216,10 +298,10 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                           )}
                         </button>
 
-                        {showPhoto && (
+                        {complaint.resolvedEvidenceUrl && showPhoto && (
                           <div className="mt-3">
                             <img
-                              src={samplePhoto}
+                              src={complaint.resolvedEvidenceUrl}
                               alt="Resolved proof"
                               className="w-60 h-36 rounded-lg border border-gray-300 shadow-sm object-cover"
                             />
@@ -227,18 +309,6 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
                         )}
                       </div>
                     )}
-
-                    {/* {isActive && step.label === "Feedback" && (
-                      <div className="mt-3 ml-1">
-                        <button
-                          onClick={() => setShowFeedbackForm(true)}
-                          className="mt-2 flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-all duration-200 shadow-md"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          Feedback Form
-                        </button>
-                      </div>
-                    )} */}
                   </div>
                 );
               })}

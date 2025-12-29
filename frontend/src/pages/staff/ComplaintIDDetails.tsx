@@ -7,7 +7,9 @@ interface ComplaintDetailPageProps {
   complaintId: string;
 }
 
-export default function ComplaintDetailPage({ complaintId }: ComplaintDetailPageProps) {
+export default function ComplaintDetailPage({
+  complaintId,
+}: ComplaintDetailPageProps) {
   const [complaint, setComplaint] = useState<Feedback | null>(null);
 
   useEffect(() => {
@@ -32,7 +34,9 @@ export default function ComplaintDetailPage({ complaintId }: ComplaintDetailPage
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       {/* Header */}
-      <h1 className="text-3xl font-bold text-purple-700 mb-4">Complaint Details</h1>
+      <h1 className="text-3xl font-bold text-purple-700 mb-4">
+        Complaint Details
+      </h1>
 
       {/* General Details */}
       <div className="bg-white/70 backdrop-blur-md rounded-xl border border-gray-200 shadow p-6 grid grid-cols-2 gap-4">
@@ -59,7 +63,9 @@ export default function ComplaintDetailPage({ complaintId }: ComplaintDetailPage
 
         {/* Comments */}
         <div>
-          <h2 className="text-xl font-semibold text-purple-700 mb-2">Comments</h2>
+          <h2 className="text-xl font-semibold text-purple-700 mb-2">
+            Comments
+          </h2>
           <p className="text-gray-800 text-sm whitespace-pre-wrap">
             {complaint.comments || "-"}
           </p>
@@ -85,13 +91,23 @@ const Stars = ({ rating }: { rating: number }) => {
 
   return (
     <div className="flex items-center gap-1">
-      {Array(fullStars).fill(0).map((_, i) => (
-        <Star key={`full-${i}`} className="w-7 h-7 text-yellow-400" fill="#FFD700" />
-      ))}
-      {halfStar && <StarHalf className="w-7 h-7 text-yellow-400" fill="#FFD700" />}
-      {Array(emptyStars).fill(0).map((_, i) => (
-        <Star key={`empty-${i}`} className="w-7 h-7 text-gray-300" />
-      ))}
+      {Array(fullStars)
+        .fill(0)
+        .map((_, i) => (
+          <Star
+            key={`full-${i}`}
+            className="w-7 h-7 text-yellow-400"
+            fill="#FFD700"
+          />
+        ))}
+      {halfStar && (
+        <StarHalf className="w-7 h-7 text-yellow-400" fill="#FFD700" />
+      )}
+      {Array(emptyStars)
+        .fill(0)
+        .map((_, i) => (
+          <Star key={`empty-${i}`} className="w-7 h-7 text-gray-300" />
+        ))}
     </div>
   );
 };

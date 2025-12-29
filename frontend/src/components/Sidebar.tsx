@@ -12,9 +12,9 @@ import {
   ClipboardClock,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import logo from "../assets/CampusFix_Logo2.png";
 import defaultAvatar from "../assets/userAvatar.png";
-import { getCurrentUser, logout } from "../../utils/auth";
 
 // Define prop types for Sidebar
 interface SidebarProps {
@@ -25,34 +25,20 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-
-  const currentUser = getCurrentUser();
+  const { user, profile, signOut } = useAuth(); // Use AuthContext
 
   // Load student profile if available
   let displayName = "User";
-  const displayEmail = currentUser?.email ?? "unknown@domain";
-  let profileImage = defaultAvatar;
+  const displayEmail = user?.email ?? "unknown@domain";
+  let profileImage = profile?.profile_pic_url || defaultAvatar;
 
-  if (currentUser?.role === "student") {
-    try {
-      const key = `hm_student_profile_${currentUser.id}`;
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const prof = JSON.parse(raw) as {
-          name?: string;
-          profilePicture?: string;
-        };
-        if (prof?.name) displayName = prof.name;
-        if (prof?.profilePicture) profileImage = prof.profilePicture;
-      } else {
-        displayName = "Student";
-      }
-    } catch {
-      // ignore parsing errors
-    }
-  } else if (currentUser?.role === "staff") {
+  if (profile?.full_name) {
+    displayName = profile.full_name;
+  } else if (profile?.role === "student") {
+    displayName = "Student";
+  } else if (profile?.role === "staff") {
     displayName = "Staff";
-  } else if (currentUser?.role === "admin") {
+  } else if (profile?.role === "admin") {
     displayName = "Admin";
   }
 
@@ -82,9 +68,11 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     staff: ["/staff/", "/staff/task", "/staff/performance"],
     student: ["/student/", "/student/complaint", "/student/track"],
   };
-  const allowedPaths = currentUser ? allowedPathsByRole[currentUser.role] ?? [] : [];
+  const allowedPaths = profile ? allowedPathsByRole[profile.role] ?? [] : [];
 
-  const menuItems = allMenuItems.filter((item) => allowedPaths.includes(item.path));
+  const menuItems = allMenuItems.filter((item) =>
+    allowedPaths.includes(item.path)
+  );
 
   return (
     <div
@@ -101,7 +89,15 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         {/* 🔹 Top Logo Section */}
         <div className="flex flex-col px-4 border-b border-white/30 py-4 relative">
           <Link
-            to={currentUser ? (currentUser.role === "admin" ? "/admin/dashboard" : currentUser.role === "staff" ? "/staff/" : "/student/") : "/auth/login"}
+            to={
+              profile
+                ? profile.role === "admin"
+                  ? "/admin/dashboard"
+                  : profile.role === "staff"
+                  ? "/staff/"
+                  : "/student/"
+                : "/auth/login"
+            }
             className="flex items-center gap-3 hover:opacity-90 transition-opacity"
           >
             <img
@@ -164,7 +160,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <div className="border-t border-gray-200 my-3"></div>
 
           {/* Students can edit their profile pictures by clicking on /student/profile; other roles only display information. */}
-          {currentUser?.role === "student" ? (
+          {profile?.role === "student" ? (
+            // Note: Variable currentUser is replaced by profile in previous edits, so we need to match carefully or fix this.
+            // Ah, I renamed 'currentUser' logic section but 'currentUser' is used here.
+            // I should replace 'currentUser?.role' with 'profile?.role'.
             <Link
               to="/student/profile"
               className={`flex items-center gap-3 transition-all duration-300 ${
@@ -218,8 +217,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         {/* 🔹 Logout Button */}
         <div className="px-3 pb-5 border-t border-white/30">
           <button
-            onClick={() => {
-              logout();
+            onClick={async () => {
+              await signOut();
               navigate("/");
             }}
             className="flex items-center gap-3 px-3 py-2 w-full rounded-lg 
