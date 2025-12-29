@@ -101,7 +101,7 @@ export const taskCategoryMap: Record<string, Task[]> = {
       assignmentGroup: "INDUK-TEKUN",
       assignedTo: "Kevin Goh",
       openedAt: "2025-10-26 03:55:40",
-      openedBy: "Student 3",
+      openedBy: "Tan Ke Jun",
       status: "Completed",
     },
     {
