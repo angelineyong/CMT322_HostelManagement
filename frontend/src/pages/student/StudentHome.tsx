@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { holidays, staffAvailability } from "../../data/mockData";
 import { supabase } from "../../lib/supabaseClient";
+import type { Holiday } from "./useHolidays";
+import { useHolidays } from "./useHolidays";
 import HolidayBanner from "../../components/HolidayBanner";
 import pendingIcon from "../../assets/PendingComplaint.png";
 import inProgressIcon from "../../assets/InProgress.png";
@@ -34,120 +35,132 @@ function useCountUp(target: number, duration = 800) {
 	return value;
 }
 
-const Calendar: React.FC = () => {
-	const [current, setCurrent] = useState(new Date());
+function getStaffAvailability(isHoliday: boolean) {
+	const now = new Date();
+	const day = now.getDay(); // 0=Sun
+	const hour = now.getHours();
 
-	const year = current.getFullYear();
-	const month = current.getMonth();
+	if (isHoliday || day === 0) {
+		return {
+		status: "Unavailable",
+		statusType: "unavailable",
+		note: "Public holiday / Sunday",
+		};
+	}
 
-	const firstDay = new Date(year, month, 1);
-	const startDay = firstDay.getDay(); // 0 (Sun) - 6 (Sat)
-	const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-	const days = [] as (number | null)[];
-	for (let i = 0; i < startDay; i++) days.push(null);
-	for (let d = 1; d <= daysInMonth; d++) days.push(d);
-
-	const prevMonth = () => setCurrent(new Date(year, month - 1, 1));
-	const nextMonth = () => setCurrent(new Date(year, month + 1, 1));
-
-	const getHoliday = (day: number) => {
-		// Build a Date object for the calendar cell
-		const target = new Date(year, month, day);
-
-		// Support holidays defined as a single date or as comma-separated dates
-		for (const holiday of holidays) {
-			const raw = String(holiday.date || "");
-			const tokens = raw.split(",").map((t) => t.trim()).filter(Boolean);
-
-			for (const token of tokens) {
-				let dObj: Date | null = null;
-
-				// Try explicit YYYY-M-D or YYYY-MM-DD parts first
-				const parts = token.split("-").map((p) => p.trim());
-				if (parts.length === 3 && /^\d+$/.test(parts[0])) {
-					const y = Number(parts[0]);
-					const m = Number(parts[1]) - 1;
-					const d = Number(parts[2]);
-					if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
-						dObj = new Date(y, m, d);
-					}
-				} else {
-					// Fallback to Date parsing for other acceptable formats
-					const parsed = new Date(token);
-					if (!isNaN(parsed.getTime())) dObj = parsed;
-				}
-
-				if (dObj) {
-					if (
-						dObj.getFullYear() === target.getFullYear() &&
-						dObj.getMonth() === target.getMonth() &&
-						dObj.getDate() === target.getDate()
-					) {
-						return holiday;
-					}
-				}
-			}
+	if (day === 6) {
+		if (hour >= 9 && hour < 12) {
+		return {
+			status: "Available",
+			statusType: "available",
+			note: "On duty until 12:00",
+		};
 		}
+		return {
+		status: "After Office Hour",
+		statusType: "after-office-hours",
+		note: "Office hours ended",
+		};
+	}
 
-		return undefined;
+	if (hour >= 9 && hour < 17) {
+		return {
+		status: "Available",
+		statusType: "available",
+		note: "On duty until 17:00",
+		};
+	}
+
+	return {
+		status: "After Office Hour",
+		statusType: "after-office-hours",
+		note: "Office hours ended",
 	};
+}
 
-	return (
-		<div className="bg-white rounded-lg shadow p-4 transition-transform duration-300 hover:scale-105">
-			<div className="flex items-center justify-between mb-3">
-				<button onClick={prevMonth} className="px-2 py-1 rounded hover:bg-gray-100">◀</button>
-				<div className="text-lg font-medium">
-					{current.toLocaleString(undefined, { month: "long" })} {year}
-				</div>
-				<button onClick={nextMonth} className="px-2 py-1 rounded hover:bg-gray-100">▶</button>
-			</div>
+const Calendar: React.FC<{ holidays: Holiday[] }> = ({ holidays }) => {
+  const [current, setCurrent] = useState(new Date());
 
-			<div className="grid grid-cols-7 gap-1 text-sm text-center mb-2">
-				<div className="text-red-500 font-medium">Sun</div>
-				<div className="text-gray-500">Mon</div>
-				<div className="text-gray-500">Tue</div>
-				<div className="text-gray-500">Wed</div>
-				<div className="text-gray-500">Thu</div>
-				<div className="text-gray-500">Fri</div>
-				<div className="text-gray-500">Sat</div>
-			</div>
+  const year = current.getFullYear();
+  const month = current.getMonth();
 
-			<div className="grid grid-cols-7 gap-1 text-center">
-				{days.map((d, i) => {
-					const isToday = d === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
-					const isSunday = (i % 7) === 0;
-					const holiday = d ? getHoliday(d) : null;
-					
-					return (
-						<div
-							key={i}
-							className={`h-8 sm:h-10 flex items-center justify-center rounded text-xs sm:text-sm relative group cursor-pointer
-								${d ? "bg-gray-50" : "bg-transparent"}
-								${isToday ? "ring-2 ring-indigo-300 font-semibold" : ""}
-								${holiday ? "bg-red-50 text-red-600 font-semibold" : ""}
-								${isSunday && d ? "text-red-500" : ""}`}
-							title={holiday?.name}
-						>
-							{d ?? ""}
-							{holiday && (
-								<div className="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap">
-									{holiday.name}
-								</div>
-							)}
-						</div>
-					);
-				})}
-			</div>
-		</div>
+  const firstDay = new Date(year, month, 1);
+  const startDay = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const days: (number | null)[] = [];
+  for (let i = 0; i < startDay; i++) days.push(null);
+  for (let d = 1; d <= daysInMonth; d++) days.push(d);
+
+  const prevMonth = () => setCurrent(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrent(new Date(year, month + 1, 1));
+
+  const toDateOnly = (d: Date) =>
+	d.toISOString().split("T")[0]; // YYYY-MM-DD
+
+  const isHoliday = (date: Date) => {
+	const dayStr = [
+		date.getFullYear(),
+		String(date.getMonth() + 1).padStart(2, "0"),
+		String(date.getDate()).padStart(2, "0"),
+	].join("-");
+
+	return holidays.find(h =>
+		dayStr >= h.start_date && dayStr <= h.end_date
 	);
-	};
+ };
+
+  return (
+    <div className="bg-white rounded-lg shadow p-4 transition-transform duration-300 hover:scale-105">
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={prevMonth} className="px-2 py-1 rounded hover:bg-gray-100">◀</button>
+        <div className="text-lg font-medium">
+          {current.toLocaleString(undefined, { month: "long" })} {year}
+        </div>
+        <button onClick={nextMonth} className="px-2 py-1 rounded hover:bg-gray-100">▶</button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 text-sm text-center mb-2">
+        <div className="text-red-500 font-medium">Sun</div>
+        <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {days.map((d, i) => {
+		  if (!d) return <div key={i} />;
+
+          const date = new Date(year, month, d);
+          const holiday = date ? isHoliday(date) : null;
+		  const isToday =
+    		toDateOnly(date) === toDateOnly(new Date());
+  		  const isSunday = date.getDay() === 0;
+
+          return (
+            <div
+              key={i}
+              className={`h-8 sm:h-10 flex items-center justify-center rounded text-xs sm:text-sm relative
+                ${isToday ? "ring-2 ring-indigo-300 font-semibold" : ""}
+				${isSunday && !holiday ? "text-red-400" : ""}
+				${d ? "bg-gray-50" : ""}
+                ${holiday ? "bg-red-50 text-red-600 font-semibold" : ""}
+              `}
+              title={holiday?.holiday_name}
+            >
+              {d}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const StudentHome: React.FC = () => {
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 	const [complaints, setComplaints] = useState<any[]>([]);
 	const [fullName, setFullName] = useState<string>("");
 	const [loadingComplaints, setLoadingComplaints] = useState(false);
+	const { holidays } = useHolidays();
 	// summary counts
 	const [submittedCountDB, setSubmittedCountDB] = useState(0);
 	const [pendingCountDB, setPendingCountDB] = useState(0);
@@ -271,6 +284,15 @@ const StudentHome: React.FC = () => {
 	load();
 	}, [currentUserId]);
 
+	const today = new Date();
+	const isTodayHoliday = holidays.some(h => {
+		const start = new Date(h.start_date);
+		const end = new Date(h.end_date);
+		return today >= start && today <= end;
+	});
+
+  const staffAvailability = getStaffAvailability(isTodayHoliday);
+
 
 	// header visibility for on-scroll animation
 	const headerRef = useRef<HTMLDivElement | null>(null);
@@ -377,7 +399,7 @@ const StudentHome: React.FC = () => {
 					<div className="text-indigo-500 font-medium mb-4 sm:mb-8 lg:mb-12 text-xs sm:text-sm lg:text-base">Creating comfort through your feedback.</div>
 				</div>
 			</div>				
-			<h1 className="text-lg sm:text-2xl lg:text-4xl font-semibold mb-4 sm:mb-5 text-left px-4 sm:px-0">Welcome back{fullName ? `, ${fullName}` : ""}</h1>
+			<h1 className="text-lg sm:text-xl lg:text-4xl font-semibold mt-6 sm:mt-10 lg:mt-14 mb-4 sm:mb-5 text-left px-4 sm:px-0">Welcome back{fullName ? `, ${fullName}` : ""}</h1>
 				</div>
 			</div>
 
@@ -511,11 +533,10 @@ const StudentHome: React.FC = () => {
 						<div>
 					<div className="text-xs sm:text-sm text-gray-500">Staff Status</div>
 					<div className="text-sm sm:text-base font-semibold">{staffAvailability.status} <span className="text-xs sm:text-sm text-gray-400">— {staffAvailability.note}</span></div>
-					<div className="text-xs text-gray-400 mt-1">Updated: {staffAvailability.updatedAt}</div>
 						</div>
 					</div>
 
-					<Calendar />
+					<Calendar holidays={holidays} />
 				</div>
 			</div>
 
@@ -533,7 +554,7 @@ const StudentHome: React.FC = () => {
 			</p>
 
 			<div className="transition-transform duration-300 hover:scale-105 text-sm sm:text-base lg:text-lg">
-				<HolidayBanner />
+				<HolidayBanner holidays={holidays} />
 			</div>
 			</div>
 			{selectedComplaintId && (

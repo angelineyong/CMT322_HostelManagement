@@ -530,7 +530,7 @@ export const holidays: Holiday[] = [
 export const staffAvailability = {
   name: "Maintenance Team",
   status: "Available",
-  // statusType can be: 'available' | 'out-of-office' | 'unavailable' | 'after office hours'
+  // statusType can be: 'available' | 'unavailable' | 'after office hours'
   statusType: "available",
   note: "On duty until 17:00",
   updatedAt: "2025-11-08 09:00",
