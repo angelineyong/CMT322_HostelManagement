@@ -9,25 +9,28 @@ interface FeedbackFormProps {
   complaintId?: string;
   onClose: () => void;
   onSubmit?: (complaintId: string, feedback: string, rating: number) => void;
-  existingFeedback?: {
-    stars: number;
-    comment: string;
-  };
+}
+
+interface Student {
+  id: string;
+  room_no: string;
+  hostel_block: string;
+}
+
+interface Complaint {
+  id: string;
+  task_id: string;
+  description: string;
+  status_id: number;
+  created_at: string;
 }
 
 interface FeedbackDetail {
-  feedback_id: number; // Use as star rating
+  feedback_id: number | null;
+  rating: number;
   comments: string;
-  student: {
-    room_no: string;
-    hostel_block: string;
-  };
-  complaint: {
-    task_id: string;
-    description: string;
-    status_id: number;
-    created_at: string;
-  };
+  student: Student;
+  complaint?: Complaint | null;
 }
 
 /* ===================== Component ===================== */
@@ -36,80 +39,140 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
   complaintId: propComplaintId,
   onClose,
   onSubmit,
-  existingFeedback,
 }) => {
   const [searchParams] = useSearchParams();
   const urlComplaintId = searchParams.get("feedbackId");
   const complaintId = propComplaintId || urlComplaintId || "";
 
-  const [rating, setRating] = useState<number>(existingFeedback?.stars || 0);
-  const [feedback, setFeedback] = useState<string>(
-    existingFeedback?.comment || ""
-  );
+  const [rating, setRating] = useState<number>(0);
+  const [feedback, setFeedback] = useState<string>("");
   const [feedbackDetails, setFeedbackDetails] = useState<FeedbackDetail | null>(null);
-  const isReadOnly = !!existingFeedback;
+  const [loading, setLoading] = useState<boolean>(true);
 
-  /* ===================== Fetch Feedback ===================== */
+  const isReadOnly = feedbackDetails?.feedback_id !== null;
 
+  /* ===================== Fetch Feedback + Student ===================== */
   useEffect(() => {
-    const fetchFeedbackDetails = async () => {
-      if (!complaintId) return;
+    if (!complaintId) return;
 
-      const { data, error } = await supabase
-        .from("feedback")
-        .select(`
-          feedback_id,
-          comments,
-          student:student_id (*),
-          complaint:complaint_id (task_id, description, status_id, created_at)
-        `)
-        .eq("complaint_id", complaintId)
-        .single();
+    const fetchData = async () => {
+      setLoading(true);
 
-      if (error) {
-        console.error("Error fetching feedback details:", error);
-        setFeedbackDetails(null);
-      } else if (data) {
-        // Map feedback_id to rating, comments to textarea
-        setRating(data.feedback_id);
-        setFeedback(data.comments || "");
+      try {
+        // Get logged-in user
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          console.error("User not logged in:", userError);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch student corresponding to logged-in user
+        const { data: studentData, error: studentError } = await supabase
+          .from("students")
+          .select("id, room_no, hostel_block")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (studentError || !studentData) {
+          console.error("Student record not found:", studentError);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch existing feedback (if any)
+        const { data: feedbackData } = await supabase
+          .from("feedback")
+          .select("feedback_id, rating, comments")
+          .eq("complaint_id", complaintId)
+          .maybeSingle();
+
         setFeedbackDetails({
-          feedback_id: data.feedback_id,
-          comments: data.comments,
-          student: data.student?.[0] || { room_no: "N/A", hostel_block: "N/A" }, // extract first
-          complaint: data.complaint?.[0] || {
-            task_id: "N/A",
-            description: "N/A",
-            status_id: 0,
-            created_at: "",
-          },
+          feedback_id: feedbackData?.feedback_id ?? null,
+          rating: feedbackData?.rating ?? 0,
+          comments: feedbackData?.comments ?? "",
+          student: studentData,
         });
+
+        setRating(feedbackData?.rating ?? 0);
+        setFeedback(feedbackData?.comments ?? "");
+      } catch (err) {
+        console.error("Error fetching feedback/student:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchFeedbackDetails();
+    fetchData();
   }, [complaintId]);
 
-  /* ===================== Submit ===================== */
-
-  const handleSubmit = (e: React.FormEvent) => {
+  /* ===================== Submit Feedback ===================== */
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (rating === 0) {
-      alert("Please select a rating before submitting.");
+      alert("Please select a rating.");
       return;
     }
-    if (onSubmit) {
-      onSubmit(complaintId, feedback, rating);
+
+    if (!feedbackDetails?.student) {
+      alert("Student information missing. Cannot submit feedback.");
+      return;
     }
-    alert("Thank you for your feedback!");
-    onClose();
+
+    try {
+      // Update existing feedback
+      if (feedbackDetails.feedback_id) {
+        const { error } = await supabase
+          .from("feedback")
+          .update({ rating, comments: feedback })
+          .eq("feedback_id", feedbackDetails.feedback_id);
+
+        if (error) throw error;
+      } 
+      // Insert new feedback
+      else {
+        const { error } = await supabase
+          .from("feedback")
+          .insert({
+            complaint_id: complaintId,
+            student_id: feedbackDetails.student.id,
+            rating,
+            comments: feedback,
+          });
+
+        if (error) throw error;
+
+        // Optionally update complaint feedback status
+        const { error: complaintError } = await supabase
+          .from("complaints")
+          .update({ feedback: true })
+          .eq("task_id", complaintId);
+
+        if (complaintError) console.warn("Error updating complaint:", complaintError);
+      }
+
+      alert("Thank you for your feedback!");
+      onSubmit?.(complaintId, feedback, rating);
+      onClose();
+    } catch (err) {
+      console.error("Submit feedback error:", err);
+      alert("Failed to submit feedback. Please try again.");
+    }
+    window.location.reload();
+    
   };
 
   /* ===================== UI ===================== */
+  if (loading || !feedbackDetails) return <div>Loading...</div>;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex justify-center items-center z-50">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-8 relative animate-fadeIn">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-8 relative">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -122,54 +185,17 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
           {isReadOnly ? "Feedback Submitted" : "Submit Feedback"}
         </h2>
 
-        {/* Complaint + Student Details */}
-        {feedbackDetails ? (
-          <div className="bg-indigo-50 p-4 rounded-lg mb-6 text-sm text-gray-700">
-            <p>
-              <span className="font-medium text-indigo-700">Complaint ID:</span>{" "}
-              {feedbackDetails.complaint.task_id}
-            </p>
-            <p>
-              <span className="font-medium text-indigo-700">Description:</span>{" "}
-              {feedbackDetails.complaint.description}
-            </p>
-            <p>
-              <span className="font-medium text-indigo-700">Location:</span>{" "}
-              {feedbackDetails.student.room_no} / {feedbackDetails.student.hostel_block}
-            </p>
-            <p>
-              <span className="font-medium text-indigo-700">Date Submitted:</span>{" "}
-              {new Date(feedbackDetails.complaint.created_at).toLocaleDateString()}
-            </p>
-            <p>
-              <span className="font-medium text-indigo-700">Status ID:</span>{" "}
-              {feedbackDetails.complaint.status_id}
-            </p>
-          </div>
-        ) : (
-          <div className="bg-yellow-50 p-4 rounded-lg mb-6 text-sm text-gray-700">
-            <p className="font-semibold text-red-600">Complaint details not found.</p>
-            <p>
-              <span className="font-medium text-indigo-700">Complaint ID:</span>{" "}
-              {complaintId || "Unknown"}
-            </p>
-          </div>
-        )}
-
         {/* Feedback Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Rating */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Rate Your Experience:
-            </label>
+            <label className="block font-medium mb-2">Rate Your Experience</label>
             <div className="flex justify-center gap-2">
               {[1, 2, 3, 4, 5].map((num) => (
                 <button
                   type="button"
                   key={num}
                   onClick={() => !isReadOnly && setRating(num)}
-                  className="transition-transform hover:scale-110"
                 >
                   <Star
                     size={36}
@@ -183,16 +209,13 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
 
           {/* Comment */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Additional Comments:
-            </label>
+            <label className="block font-medium mb-2">Additional Comments</label>
             <textarea
               rows={4}
               value={feedback}
               readOnly={isReadOnly}
               onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Tell us about your experience..."
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-indigo-400"
             />
           </div>
 
@@ -201,7 +224,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
             <div className="text-center">
               <button
                 type="submit"
-                className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
               >
                 Submit Feedback
               </button>

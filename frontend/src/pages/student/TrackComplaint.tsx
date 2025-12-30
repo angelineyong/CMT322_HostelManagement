@@ -272,7 +272,7 @@ const TrackComplaint: React.FC = () => {
                         }`}
                     >
                       {complaint.status}
-                      <span className="text-gray-500 text-xs sm:text-sm ml-0.5 sm:ml-1 flex-shrink-0">
+                      <span className="text-gray-500 text-xs sm:text-sm ml-0.5 sm:ml-1 shrink-0">
                         <ArrowRight size={12} />
                       </span>
                     </button>
