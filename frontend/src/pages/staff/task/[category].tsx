@@ -80,12 +80,18 @@ export default function TaskCategoryPage() {
         .select(
           `
           *,
+          status!inner ( status_name ),
           facility_type ( facility_type ),
           assignment_groups ( id, name ),
           assigned_to_profile:assigned_to ( id, full_name )
         `
         )
         .eq("assignment_group_id", myGroupId)
+        .filter(
+          "status.status_name",
+          "not.in",
+          '("Resolved","Closed","Closed Complete","Closed Incomplete")'
+        )
         .order("created_at", { ascending: false });
 
       if (error) throw error;
