@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useInactivity } from "../hooks/useInactivity";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
 
@@ -141,6 +142,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     signOut,
   };
+
+  // 3. Inactivity Timeout
+  useInactivity(() => {
+    if (session) {
+      console.log("User inactive. Logging out...");
+      signOut();
+      alert("You have been logged out due to inactivity.");
+    }
+  });
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
