@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import AppRouter from "./router/AppRouter";
+import { useAuth } from "./context/AuthContext";
 
 export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
+  const { user } = useAuth();
 
   // Ensure a default admin exists (virtual account) - REMOVED (Supabase Auth)
   useEffect(() => {
@@ -29,8 +31,9 @@ export default function App() {
     "/auth/update-password",
   ];
 
-  // Check if current path is one of them
-  const shouldHideSidebar = hideSidebarRoutes.includes(location.pathname);
+  // Check if current path is one of them OR if user is not logged in
+  const shouldHideSidebar =
+    hideSidebarRoutes.includes(location.pathname) || !user;
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-900">
