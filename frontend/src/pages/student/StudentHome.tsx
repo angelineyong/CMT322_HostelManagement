@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import type { Holiday } from "./useHolidays";
 import { useHolidays } from "./useHolidays";
@@ -159,7 +159,7 @@ const StudentHome: React.FC = () => {
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 	const [complaints, setComplaints] = useState<any[]>([]);
 	const [fullName, setFullName] = useState<string>("");
-	const [loadingComplaints, setLoadingComplaints] = useState(false);
+	// const [loadingComplaints, setLoadingComplaints] = useState(false);
 	const { holidays } = useHolidays();
 	// summary counts
 	const [submittedCountDB, setSubmittedCountDB] = useState(0);
@@ -201,7 +201,7 @@ const StudentHome: React.FC = () => {
 	if (!currentUserId) return;
 
 	const load = async () => {
-		setLoadingComplaints(true);
+		// setLoadingComplaints(true);
 
 		try {
 		// Fetch complaints for current user
@@ -277,7 +277,7 @@ const StudentHome: React.FC = () => {
 		} catch (err) {
 		console.error("Failed to load student complaints:", err);
 		} finally {
-		setLoadingComplaints(false);
+		// setLoadingComplaints(false);
 		}
 	};
 

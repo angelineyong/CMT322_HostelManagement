@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { Pickaxe, MessageSquare, Image as ImageIcon, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Pickaxe, MessageSquare, Image as ImageIcon, ChevronDown, ChevronUp } from "lucide-react";
 import FeedbackForm from "./FeedbackForm";
 
 interface ComplaintDetailProps {
