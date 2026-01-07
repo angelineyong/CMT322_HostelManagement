@@ -43,7 +43,11 @@ export default function App() {
 
       <main
         className={`flex-1 overflow-y-auto min-h-screen bg-gray-50 p-1 transition-all duration-300 ${
-          !shouldHideSidebar ? (isSidebarOpen ? "ml-64" : "ml-20") : "ml-0"
+          !shouldHideSidebar
+            ? isSidebarOpen
+              ? "md:ml-64"
+              : "md:ml-20"
+            : "ml-0"
         }`}
       >
         <AppRouter />
