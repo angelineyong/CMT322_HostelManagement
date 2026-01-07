@@ -134,6 +134,14 @@ const TrackComplaint: React.FC = () => {
       [complaintId]: { stars: rating, comment: feedback },
     }));
 
+    setComplaints((prev) =>
+      prev.map((c) =>
+        c.complaintId === complaintId
+          ? { ...c, feedback: true }
+          : c
+      )
+    );
+
     // alert(`Thank you for your feedback on ${complaintId}!`);
   };
 
