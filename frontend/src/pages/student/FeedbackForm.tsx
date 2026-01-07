@@ -165,7 +165,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
       console.error("Submit feedback error:", err);
       alert("Failed to submit feedback. Please try again.");
     }
-    window.location.reload();
+    // window.location.reload();
     
   };
 
