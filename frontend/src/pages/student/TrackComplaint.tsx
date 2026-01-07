@@ -326,20 +326,20 @@ const TrackComplaint: React.FC = () => {
       
 
      {/* Feedback Form Modal */}
-    {/* {feedbackComplaintId && (
+    {feedbackComplaintId && (
       <FeedbackForm
         complaintId={feedbackComplaintId}
         onClose={() => setFeedbackComplaintId(null)}
         onSubmit={handleFeedbackSubmit}
-        existingFeedback={
-          // First check local state (newly submitted feedback), else check fetched complaints
-          feedbackData[feedbackComplaintId] ||
-          (complaints.find((c) => c.complaintId === feedbackComplaintId && c.feedback)
-            ? { stars: 0, comment: "" }
-            : undefined)
-        }
+        // existingFeedback={
+        //   // First check local state (newly submitted feedback), else check fetched complaints
+        //   feedbackData[feedbackComplaintId] ||
+        //   (complaints.find((c) => c.complaintId === feedbackComplaintId && c.feedback)
+        //     ? { stars: 0, comment: "" }
+        //     : undefined)
+        // }
       />
-    )} */}
+    )}
     </div>
   );
 };

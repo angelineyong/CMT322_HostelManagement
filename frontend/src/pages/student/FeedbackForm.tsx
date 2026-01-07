@@ -6,7 +6,8 @@ import { supabase } from "../../lib/supabaseClient";
 /* ===================== Types ===================== */
 
 interface FeedbackFormProps {
-  complaintId?: string;
+  // complaintId?: string;
+  complaintId: string;
   onClose: () => void;
   onSubmit?: (complaintId: string, feedback: string, rating: number) => void;
 }
@@ -42,7 +43,8 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
 }) => {
   const [searchParams] = useSearchParams();
   const urlComplaintId = searchParams.get("feedbackId");
-  const complaintId = propComplaintId || urlComplaintId || "";
+  // const complaintId = propComplaintId || urlComplaintId || "";
+  const complaintId = propComplaintId;
 
   const [rating, setRating] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>("");
