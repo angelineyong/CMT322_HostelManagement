@@ -134,6 +134,14 @@ const TrackComplaint: React.FC = () => {
       [complaintId]: { stars: rating, comment: feedback },
     }));
 
+    setComplaints((prev) =>
+      prev.map((c) =>
+        c.complaintId === complaintId
+          ? { ...c, feedback: true }
+          : c
+      )
+    );
+
     // alert(`Thank you for your feedback on ${complaintId}!`);
   };
 
@@ -331,13 +339,13 @@ const TrackComplaint: React.FC = () => {
         complaintId={feedbackComplaintId}
         onClose={() => setFeedbackComplaintId(null)}
         onSubmit={handleFeedbackSubmit}
-        existingFeedback={
-          // First check local state (newly submitted feedback), else check fetched complaints
-          feedbackData[feedbackComplaintId] ||
-          (complaints.find((c) => c.complaintId === feedbackComplaintId && c.feedback)
-            ? { stars: 0, comment: "" }
-            : undefined)
-        }
+        // existingFeedback={
+        //   // First check local state (newly submitted feedback), else check fetched complaints
+        //   feedbackData[feedbackComplaintId] ||
+        //   (complaints.find((c) => c.complaintId === feedbackComplaintId && c.feedback)
+        //     ? { stars: 0, comment: "" }
+        //     : undefined)
+        // }
       />
     )}
     </div>
