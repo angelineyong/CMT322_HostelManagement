@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFacility, setSelectedFacility] = useState("");
   const [selectedStaff, setSelectedStaff] = useState("");
+  const [staffPerformanceData, setStaffPerformanceData] = useState<any[]>([]);
+
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -29,21 +31,33 @@ export default function DashboardPage() {
   const [facilityData, setFacilityData] = useState<any[]>([]);
   const [trendChartData, setTrendChartData] = useState<any[]>([]);
   const [staffChartData, setStaffChartData] = useState<any[]>([]);
+  const [staffComplaints, setStaffComplaints] = useState<any[]>([]);
+
 
   useEffect(() => {
     fetchDashboardData();
+    fetchStaffPerformance();
+    fetchStaffComplaints();
   }, []);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+
+      // const { data: feedbackData, error: feedbackError } = await supabase
+      //   .from("feedback")
+      //   .select("rating, created_at");
+
+      // if (feedbackError) throw feedbackError;
+
       const { data, error } = await supabase.from("complaints").select(`
           id,
           created_at,
           resolved_at,
           status ( status_name ),
           facility_type ( facility_type ),
-          assigned_to_profile:assigned_to ( full_name )
+          assigned_to_profile:assigned_to ( full_name ),
+          feedback_data:feedback ( rating )
         `);
 
       if (error) throw error;
@@ -60,14 +74,17 @@ export default function DashboardPage() {
       const staffMap: Record<string, { count: number; oldest: number }> = {};
       const monthMap: Record<
         string,
-        { complaints: number; satisfaction: number }
+        { complaints: number;
+          ratingSum: number;
+          ratingCount: number; }
       > = {};
 
       // Initialize last 6 months for trend
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = d.toLocaleString("default", { month: "short" });
-        monthMap[key] = { complaints: 0, satisfaction: 4.0 }; // Default sat. to 4.0
+        // const key = d.toLocaleString("default", { month: "short" });
+        const key = `${d.getFullYear()}-${d.getMonth()}`; 
+        monthMap[key] = { complaints: 0, ratingSum: 0, ratingCount: 0 };
       }
 
       data.forEach((task: any) => {
@@ -75,6 +92,8 @@ export default function DashboardPage() {
         const created = new Date(task.created_at);
         const facility = task.facility_type?.facility_type || "Unknown";
         const isResolved = status === "Resolved";
+
+        const ratingVal = task.feedback_data?.[0]?.rating;
 
         // Stats
         if (!isResolved) {
@@ -107,11 +126,28 @@ export default function DashboardPage() {
         facilityCounts[facility] = (facilityCounts[facility] || 0) + 1;
 
         // Trend (All tickets, by created_at)
-        const monthKey = created.toLocaleString("default", { month: "short" });
+        const monthKey = `${created.getFullYear()}-${created.getMonth()}`;
         if (monthMap[monthKey]) {
           monthMap[monthKey].complaints++;
+          
+          // If a rating exists for this ticket, add it to the average calc
+          if (typeof ratingVal === 'number') {
+            monthMap[monthKey].ratingSum += ratingVal;
+            monthMap[monthKey].ratingCount++;
+          }
         }
       });
+
+      // feedbackData?.forEach((f: any) => {
+      //   const created = new Date(f.created_at);
+      //   const monthKey = `${created.getFullYear()}-${created.getMonth()}`;
+
+      //   if (monthMap[monthKey] && f.rating) {
+      //     monthMap[monthKey].ratingSum += f.rating;
+      //     monthMap[monthKey].ratingCount++;
+      //   }
+      // });
+
 
       // Most Reported Facility
       let maxFacility = "N/A";
@@ -140,13 +176,24 @@ export default function DashboardPage() {
         .slice(0, 5); // Top 5
       setFacilityData(fData);
 
-      const tData = Object.entries(monthMap).map(([month, val]) => ({
-        month,
-        complaints: val.complaints,
-        satisfaction: val.satisfaction,
-      }));
-      // Sort by month order roughly (it was inserted in order)
+      const tData = Object.entries(monthMap).map(([key, val]) => {
+        const [year, month] = key.split("-").map(Number);
+        const label = new Date(year, month).toLocaleString("default", {
+          month: "short",
+        });
+
+        return {
+          month: label,
+          complaints: val.complaints,
+          satisfaction:
+            val.ratingCount > 0
+              ? +(val.ratingSum / val.ratingCount).toFixed(1)
+              : 0,
+        };
+      });
+
       setTrendChartData(tData);
+
 
       const sData = Object.entries(staffMap).map(([name, val]) => ({
         staffName: name,
@@ -161,12 +208,127 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchStaffPerformance = async () => {
+    try {
+      // 1️⃣ Get all staff users
+      const { data: staffData, error: staffError } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("role", "staff");
+
+      if (staffError) throw staffError;
+      if (!staffData) return;
+
+      const performance: any[] = [];
+
+      // 2️⃣ For each staff, calculate resolved complaints and average rating
+      for (const staff of staffData) {
+        // Get resolved complaints (status_id = 4) assigned to this staff
+        const { data: complaints, error: complaintsError } = await supabase
+          .from("complaints")
+          .select("task_id")
+          .eq("assigned_to", staff.id)
+          .eq("status_id", 4)
+          .eq("feedback", true); // resolved
+
+        if (complaintsError) throw complaintsError;
+
+        const resolvedCount = complaints?.length || 0;
+
+        let avgRating = 0;
+        if (resolvedCount > 0) {
+          // Get ratings from feedback table
+          const { data: feedbackData, error: feedbackError } = await supabase
+            .from("feedback")
+            .select("rating, complaint_id")
+            .in(
+              "complaint_id",
+              complaints.map((c: any) => c.task_id)
+            );
+
+          if (feedbackError) throw feedbackError;
+
+          if (feedbackData?.length > 0) {
+            avgRating =
+              feedbackData.reduce((acc, f: any) => acc + (f.rating || 0), 0) /
+              feedbackData.length;
+          }
+        }
+
+        performance.push({
+          staffName: staff.full_name,
+          averageRating: avgRating,
+          totalTasks: resolvedCount,
+        });
+      }
+
+      // 3️⃣ Optional: sort by average rating descending
+      performance.sort((a, b) => b.averageRating - a.averageRating);
+
+      // 4️⃣ Update state
+      setStaffPerformanceData(performance);
+    } catch (err) {
+      console.error("Error fetching staff performance:", err);
+    }
+  };
+
+  const fetchStaffComplaints = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("complaints")
+        .select(`
+          id,
+          task_id,
+          created_at,
+          resolved_at,
+          description,
+          feedback,
+          status:status_id ( status_name ),
+          facility_type:facility_type_id ( facility_type ),
+          assigned_to_profile:assigned_to ( full_name ),
+          feedback_data:feedback ( rating )
+        `)
+        .not("assigned_to", "is", null);
+
+      if (error) throw error;
+
+      const formatted = data.map((c: any) => {
+        // --- START OF FIX ---
+        // Supabase returns relations as an array. We need to grab the first item.
+        const ratingVal = 
+          Array.isArray(c.feedback_data) && c.feedback_data.length > 0
+            ? c.feedback_data[0].rating
+            : null;
+        // --- END OF FIX ---
+
+        return {
+          id: c.id,
+          taskId: c.task_id,
+          facility: c.facility_type?.facility_type || "Unknown",
+          assignedTo: c.assigned_to_profile?.full_name || "Unassigned",
+          rating: ratingVal, // Use the fixed value here
+          comment: c.description || "-",
+          openedAt: new Date(c.created_at).toLocaleDateString(),
+          closedAt: c.resolved_at
+            ? new Date(c.resolved_at).toLocaleDateString()
+            : null,
+        };
+      });
+
+      setStaffComplaints(formatted);
+
+    } catch (err) {
+      console.error("Error fetching staff complaints:", err);
+    }
+  };
+
+
   // Filter complaints based on search and selected filters (Mock Data for bottom tables)
-  const filteredComplaints = studentComplaints.filter((c) => {
+  const filteredComplaints = staffComplaints.filter((c) => {
     const search = searchTerm.toLowerCase();
 
     const matchesSearch =
-      c.complaintId.toLowerCase().includes(search) ||
+      c.taskId.toString().toLowerCase().includes(search) ||
       c.comment.toLowerCase().includes(search) ||
       c.facility.toLowerCase().includes(search) ||
       c.assignedTo.toLowerCase().includes(search) ||
@@ -176,10 +338,14 @@ export default function DashboardPage() {
     const matchesFacility = selectedFacility
       ? c.facility === selectedFacility
       : true;
-    const matchesStaff = selectedStaff ? c.assignedTo === selectedStaff : true;
+
+    const matchesStaff = selectedStaff
+      ? c.assignedTo === selectedStaff
+      : true;
 
     return matchesSearch && matchesFacility && matchesStaff;
   });
+
 
   return (
     <div className="p-6 space-y-6">
@@ -421,8 +587,14 @@ export default function DashboardPage() {
               {staffPerformanceData.map((staff, idx) => {
                 let remark = "";
                 let badgeColor = "";
+                 let displayRating: string | number = staff.averageRating.toFixed(1)
 
-                if (staff.averageRating >= 4.5) {
+                if (staff.totalTasks === 0) {
+                  // No resolved complaints with feedback
+                  displayRating = "-";
+                  remark = "No Feedback";
+                  badgeColor = "bg-gray-100 text-gray-800";
+                } else if (staff.averageRating >= 4.5) {
                   remark = "Excellent";
                   badgeColor = "bg-green-100 text-green-800";
                 } else if (staff.averageRating >= 3.5) {
@@ -480,13 +652,14 @@ export default function DashboardPage() {
             onChange={(e) => setSelectedFacility(e.target.value)}
           >
             <option value="">All Facilities</option>
-            {[...new Set(studentComplaints.map((c) => c.facility))].map(
+            {[...new Set(staffComplaints.map((c) => c.facility))].map(
               (facility) => (
                 <option key={facility} value={facility}>
                   {facility}
                 </option>
               )
             )}
+
           </select>
 
           <select
@@ -495,13 +668,14 @@ export default function DashboardPage() {
             onChange={(e) => setSelectedStaff(e.target.value)}
           >
             <option value="">All Staff</option>
-            {[...new Set(studentComplaints.map((c) => c.assignedTo))].map(
-              (staff) => (
-                <option key={staff} value={staff}>
-                  {staff}
-                </option>
+           {[...new Set(staffComplaints.map((c) => c.assignedTo))].map(
+            (staff) => (
+              <option key={staff} value={staff}>
+                {staff}
+              </option>
               )
             )}
+
           </select>
         </div>
 
@@ -520,12 +694,14 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredComplaints.map((complaint, idx) => (
-                <tr key={idx} className="border-t border-gray-200">
-                  <td className="p-2">{complaint.complaintId}</td>
+              { [...filteredComplaints].sort((a, b) => a.taskId.localeCompare(b.taskId))
+                .map((complaint) => (
+                <tr key={complaint.id} className="border-t border-gray-200">
+                  <td className="p-2">{complaint.taskId}</td>
                   <td className="p-2">{complaint.facility}</td>
                   <td className="p-2">{complaint.assignedTo}</td>
-                  <td className="p-2">{complaint.rating.toFixed(1)}</td>
+                  {/* <td className="p-2">{complaint.rating.toFixed(1)}</td> */}
+                  {complaint.rating !== null ? complaint.rating.toFixed(1) : "-"}
                   <td className="p-2">{complaint.comment}</td>
                   <td className="p-2">{complaint.openedAt}</td>
                   <td className="p-2">{complaint.closedAt || "-"}</td>

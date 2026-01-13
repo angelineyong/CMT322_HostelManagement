@@ -30,11 +30,12 @@ type RecentFeedback = {
   student: string;
   rating: number | null;
   comments: string;
+  feedbackCreatedAt: string; // for sorting
 };
 
 type RatingTrendEntry = {
-  date: Date; // actual date for X-axis
-  timestamp: string; // formatted for tooltip
+  date: Date;
+  timestamp: string;
   rating: number;
 };
 
@@ -44,8 +45,23 @@ export default function PerformanceInsightsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedComplaint, setSelectedComplaint] =
     useState<RecentFeedback | null>(null);
-  const [showAll, setShowAll] = useState(false);
   const [monthFilter, setMonthFilter] = useState(6); // default last 6 months
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  /* ===== RESPONSIVE ITEMS PER PAGE ===== */
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        setItemsPerPage(5); // mobile
+      } else {
+        setItemsPerPage(10); // desktop
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   /* ============== FETCH DATA ============== */
   useEffect(() => {
@@ -93,24 +109,28 @@ export default function PerformanceInsightsPage() {
   const totalTasks = complaints.length;
 
   /* ============== RECENT FEEDBACK ============== */
-  const recentFeedback: RecentFeedback[] = complaints.map((c) => {
-    const feedback = c.feedback?.[0];
-    return {
-      complaintId: c.task_id,
-      student: "Student",
-      rating: feedback?.rating ?? null,
-      comments:
-        feedback?.comments ?? "Student hasn't submitted feedback",
-    };
-  });
+  const recentFeedback: RecentFeedback[] = complaints
+    .flatMap((c) =>
+      (c.feedback ?? []).map((f) => ({
+        complaintId: c.task_id,
+        student: "Student",
+        rating: f.rating ?? null,
+        comments: f.comments ?? "Student hasn't submitted feedback",
+        feedbackCreatedAt: f.created_at,
+      }))
+    )
+    // sort descending by feedback created_at
+    .sort(
+      (a, b) =>
+        new Date(b.feedbackCreatedAt).getTime() -
+        new Date(a.feedbackCreatedAt).getTime()
+    );
 
-  const sortedFeedback = [...recentFeedback].sort((a, b) => {
-    if (a.rating !== null && b.rating === null) return -1;
-    if (a.rating === null && b.rating !== null) return 1;
-    return 0;
-  });
-
-  const feedbackToShow = showAll ? sortedFeedback : sortedFeedback.slice(0, 5);
+  const totalPages = Math.ceil(recentFeedback.length / itemsPerPage);
+  const paginatedFeedback = recentFeedback.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   /* ============== RATING TREND (Continuous Timeline) ============== */
   const allRatingTrend: RatingTrendEntry[] = complaints
@@ -157,7 +177,12 @@ export default function PerformanceInsightsPage() {
         {Array(full)
           .fill(0)
           .map((_, i) => (
-            <Star key={i} className="w-4 h-4" fill="#facc15" stroke="#facc15" />
+            <Star
+              key={i}
+              className="w-4 h-4"
+              fill="#facc15"
+              stroke="#facc15"
+            />
           ))}
         {half && <StarHalf className="w-4 h-4" fill="#facc15" stroke="#facc15" />}
         {Array(empty)
@@ -205,7 +230,7 @@ export default function PerformanceInsightsPage() {
             </tr>
           </thead>
           <tbody>
-            {feedbackToShow.map((f, i) => (
+            {paginatedFeedback.map((f, i) => (
               <tr key={i} className="border-b border-gray-300">
                 <td className="p-2">
                   <button
@@ -236,13 +261,37 @@ export default function PerformanceInsightsPage() {
           </tbody>
         </table>
 
-        {sortedFeedback.length > 5 && (
-          <button
-            className="mt-2 text-purple-600 hover:underline"
-            onClick={() => setShowAll(!showAll)}
-          >
-            {showAll ? "See Less" : "See More"}
-          </button>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-purple-100 text-purple-700 rounded disabled:opacity-50"
+            >
+              ←
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`px-3 py-1 rounded ${
+                  currentPage === i + 1
+                    ? "bg-purple-600 text-white"
+                    : "bg-purple-100 text-purple-700"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 bg-purple-100 text-purple-700 rounded disabled:opacity-50"
+            >
+              →
+            </button>
+          </div>
         )}
       </div>
 
