@@ -9,16 +9,33 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
+
+interface StaffPerformance {
+  staffName: string;
+  totalTasks: number;
+  tasksResolved: number;
+  averageRating: number;
+  ratingCount: number; // to calculate cumulative average
+}
+
+interface ComplaintRecord {
+  complaintId: string;
+  facility: string;
+  assignedTo: string;
+  rating: number;
+  comment: string;
+  openedAt: string;
+  closedAt: string | null;
+}
 
 export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFacility, setSelectedFacility] = useState("");
   const [selectedStaff, setSelectedStaff] = useState("");
-  const [staffPerformanceData, setStaffPerformanceData] = useState<any[]>([]);
-
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -30,8 +47,6 @@ export default function DashboardPage() {
   const [facilityData, setFacilityData] = useState<any[]>([]);
   const [trendChartData, setTrendChartData] = useState<any[]>([]);
   const [staffChartData, setStaffChartData] = useState<any[]>([]);
-  const [staffComplaints, setStaffComplaints] = useState<any[]>([]);
-
 
   useEffect(() => {
     fetchDashboardData();
@@ -39,24 +54,22 @@ export default function DashboardPage() {
     fetchStaffComplaints();
   }, []);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedFacility, selectedStaff]);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-
-      // const { data: feedbackData, error: feedbackError } = await supabase
-      //   .from("feedback")
-      //   .select("rating, created_at");
-
-      // if (feedbackError) throw feedbackError;
-
       const { data, error } = await supabase.from("complaints").select(`
           id,
+          task_id,
           created_at,
           resolved_at,
           status ( status_name ),
           facility_type ( facility_type ),
-          assigned_to_profile:assigned_to ( full_name ),
-          feedback_data:feedback ( rating )
+          assigned_to_profile:assigned_to ( full_name )
         `);
 
       if (error) throw error;
@@ -73,17 +86,17 @@ export default function DashboardPage() {
       const staffMap: Record<string, { count: number; oldest: number }> = {};
       const monthMap: Record<
         string,
-        { complaints: number;
-          ratingSum: number;
-          ratingCount: number; }
+        { complaints: number; satisfaction: number }
       > = {};
+
+      const staffPerfMap: Record<string, StaffPerformance> = {};
+      const records: ComplaintRecord[] = [];
 
       // Initialize last 6 months for trend
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        // const key = d.toLocaleString("default", { month: "short" });
-        const key = `${d.getFullYear()}-${d.getMonth()}`; 
-        monthMap[key] = { complaints: 0, ratingSum: 0, ratingCount: 0 };
+        const key = d.toLocaleString("default", { month: "short" });
+        monthMap[key] = { complaints: 0, satisfaction: 4.0 }; // Default sat. to 4.0
       }
 
       data.forEach((task: any) => {
@@ -92,8 +105,6 @@ export default function DashboardPage() {
         const facility = task.facility_type?.facility_type || "Unknown";
         const isResolved = status === "Resolved";
 
-        const ratingVal = task.feedback_data?.[0]?.rating;
-
         // Stats
         if (!isResolved) {
           opened++;
@@ -101,8 +112,7 @@ export default function DashboardPage() {
           const diffDays = diffMs / (1000 * 60 * 60 * 24);
           if (diffDays > 3) overdue++;
 
-          // Staff Workload (Active Only)
-          const staffName = task.assigned_to_profile?.full_name || "Unassigned";
+          // Staff Active Workload
           if (!staffMap[staffName])
             staffMap[staffName] = { count: 0, oldest: 0 };
           staffMap[staffName].count++;
@@ -111,6 +121,7 @@ export default function DashboardPage() {
           }
         }
 
+        // Resolved This Month
         if (task.resolved_at) {
           const resolvedDate = new Date(task.resolved_at);
           if (
@@ -121,32 +132,15 @@ export default function DashboardPage() {
           }
         }
 
-        // Facility Counts (All tickets)
+        // Facility Counts
         facilityCounts[facility] = (facilityCounts[facility] || 0) + 1;
 
         // Trend (All tickets, by created_at)
-        const monthKey = `${created.getFullYear()}-${created.getMonth()}`;
+        const monthKey = created.toLocaleString("default", { month: "short" });
         if (monthMap[monthKey]) {
           monthMap[monthKey].complaints++;
-          
-          // If a rating exists for this ticket, add it to the average calc
-          if (typeof ratingVal === 'number') {
-            monthMap[monthKey].ratingSum += ratingVal;
-            monthMap[monthKey].ratingCount++;
-          }
         }
       });
-
-      // feedbackData?.forEach((f: any) => {
-      //   const created = new Date(f.created_at);
-      //   const monthKey = `${created.getFullYear()}-${created.getMonth()}`;
-
-      //   if (monthMap[monthKey] && f.rating) {
-      //     monthMap[monthKey].ratingSum += f.rating;
-      //     monthMap[monthKey].ratingCount++;
-      //   }
-      // });
-
 
       // Most Reported Facility
       let maxFacility = "N/A";
@@ -168,38 +162,45 @@ export default function DashboardPage() {
         mostReportedFacility: { category: maxFacility, percentage: topPct },
       });
 
-      // Charts Setup
+      // Finalize Facility Chart
       const fData = Object.entries(facilityCounts)
         .map(([name, count]) => ({ category: name, count }))
         .sort((a, b) => b.count - a.count)
-        .slice(0, 5); // Top 5
+        .slice(0, 5);
       setFacilityData(fData);
 
-      const tData = Object.entries(monthMap).map(([key, val]) => {
-        const [year, month] = key.split("-").map(Number);
-        const label = new Date(year, month).toLocaleString("default", {
-          month: "short",
-        });
-
-        return {
-          month: label,
-          complaints: val.complaints,
-          satisfaction:
-            val.ratingCount > 0
-              ? +(val.ratingSum / val.ratingCount).toFixed(1)
-              : 0,
-        };
-      });
-
+      const tData = Object.entries(monthMap).map(([month, val]) => ({
+        month,
+        complaints: val.complaints,
+        satisfaction: val.satisfaction,
+      }));
+      // Sort by month order roughly (it was inserted in order)
       setTrendChartData(tData);
 
 
+      // Finalize Staff Active Workload Chart
       const sData = Object.entries(staffMap).map(([name, val]) => ({
         staffName: name,
         tasksInHand: val.count,
         oldestTicketDays: val.oldest,
       }));
       setStaffChartData(sData);
+
+      // Finalize Staff Performance Table
+      const perfList = Object.values(staffPerfMap).map((s) => ({
+        ...s,
+        averageRating: s.ratingCount > 0 ? s.averageRating / s.ratingCount : 0,
+      }));
+      setStaffPerformanceList(perfList);
+
+      // Finalize Complaint Records
+      records
+        .sort(
+          (a, b) =>
+            new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime()
+        )
+        .reverse(); // Newest first
+      setComplaintRecords(records);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
     } finally {
@@ -323,27 +324,44 @@ export default function DashboardPage() {
 
 
   // Filter complaints based on search and selected filters (Mock Data for bottom tables)
-  const filteredComplaints = staffComplaints.filter((c) => {
+  const filteredComplaints = studentComplaints.filter((c) => {
     const search = searchTerm.toLowerCase();
 
-    const matchesSearch =
-      c.taskId.toString().toLowerCase().includes(search) ||
-      c.comment.toLowerCase().includes(search) ||
-      c.facility.toLowerCase().includes(search) ||
-      c.assignedTo.toLowerCase().includes(search) ||
-      c.openedAt.toLowerCase().includes(search) ||
-      (c.closedAt && c.closedAt.toLowerCase().includes(search));
+      const matchesSearch =
+        c.taskId.toString().toString().toLowerCase().includes(search) ||
+        c.comment.toLowerCase().includes(search) ||
+        c.facility.toLowerCase().includes(search) ||
+        c.assignedTo.toLowerCase().includes(search) ||
+        c.openedAt.toLowerCase().includes(search) ||
+        (c.closedAt && c.closedAt.toLowerCase().includes(search));
 
-    const matchesFacility = selectedFacility
-      ? c.facility === selectedFacility
-      : true;
+      const matchesFacility = selectedFacility
+        ? c.facility === selectedFacility
+        : true;
 
-    const matchesStaff = selectedStaff
-      ? c.assignedTo === selectedStaff
-      : true;
+      const matchesStaff = selectedStaff
+     
+        ? c.assignedTo === selectedStaff
+     
+        : true;
 
-    return matchesSearch && matchesFacility && matchesStaff;
-  });
+      return matchesSearch && matchesFacility && matchesStaff;
+    });
+  }, [complaintRecords, searchTerm, selectedFacility, selectedStaff]);
+
+  // Calculate Pagination
+  const totalItems = filteredComplaints.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const paginatedData = filteredComplaints.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage > 0 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
 
   return (
@@ -583,42 +601,51 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {staffPerformanceData.map((staff, idx) => {
-                let remark = "";
-                let badgeColor = "";
-                 let displayRating: string | number = staff.averageRating.toFixed(1)
+              {staffPerformanceList.length === 0 ? (
+                <tr>
+                  <td className="p-4 text-center text-gray-500" colSpan={4}>
+                    No performance data available.
+                  </td>
+                </tr>
+              ) : (
+                staffPerformanceList.map((staff, idx) => {
+                  let remark = "";
+                  let badgeColor = "";
 
-                if (staff.totalTasks === 0) {
-                  // No resolved complaints with feedback
-                  displayRating = "-";
-                  remark = "No Feedback";
-                  badgeColor = "bg-gray-100 text-gray-800";
-                } else if (staff.averageRating >= 4.5) {
-                  remark = "Excellent";
-                  badgeColor = "bg-green-100 text-green-800";
-                } else if (staff.averageRating >= 3.5) {
-                  remark = "Satisfactory";
-                  badgeColor = "bg-yellow-100 text-yellow-800";
-                } else {
-                  remark = "Needs Improvement";
-                  badgeColor = "bg-red-100 text-red-800";
-                }
+                  if (staff.averageRating >= 4.5) {
+                    remark = "Excellent";
+                    badgeColor = "bg-green-100 text-green-800";
+                  } else if (staff.averageRating >= 3.5) {
+                    remark = "Satisfactory";
+                    badgeColor = "bg-yellow-100 text-yellow-800";
+                  } else if (staff.averageRating > 0) {
+                    remark = "Needs Improvement";
+                    badgeColor = "bg-red-100 text-red-800";
+                  } else {
+                    remark = "No Ratings";
+                    badgeColor = "bg-gray-100 text-gray-800";
+                  }
 
-                return (
-                  <tr key={idx} className="border-t border-gray-200 text-xs">
-                    <td className="p-2">{staff.staffName}</td>
-                    <td className="p-2">{staff.averageRating.toFixed(1)}</td>
-                    <td className="p-2">{staff.totalTasks}</td>
-                    <td className="p-2 text-center">
-                      <span
-                        className={`inline-block w-28 py-1 font-semibold rounded-lg ${badgeColor}`}
-                      >
-                        {remark}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr key={idx} className="border-t border-gray-200 text-xs">
+                      <td className="p-2">{staff.staffName}</td>
+                      <td className="p-2">
+                        {staff.averageRating > 0
+                          ? staff.averageRating.toFixed(1)
+                          : "N/A"}
+                      </td>
+                      <td className="p-2">{staff.tasksResolved}</td>
+                      <td className="p-2 text-center">
+                        <span
+                          className={`inline-block w-32 py-1 font-semibold rounded-lg ${badgeColor}`}
+                        >
+                          {remark}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -651,7 +678,7 @@ export default function DashboardPage() {
             onChange={(e) => setSelectedFacility(e.target.value)}
           >
             <option value="">All Facilities</option>
-            {[...new Set(staffComplaints.map((c) => c.facility))].map(
+            {[...new Set(studentComplaints.map((c) => c.facility))].map(
               (facility) => (
                 <option key={facility} value={facility}>
                   {facility}
@@ -693,21 +720,62 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              { [...filteredComplaints].sort((a, b) => a.taskId.localeCompare(b.taskId))
-                .map((complaint) => (
-                <tr key={complaint.id} className="border-t border-gray-200">
-                  <td className="p-2">{complaint.taskId}</td>
-                  <td className="p-2">{complaint.facility}</td>
-                  <td className="p-2">{complaint.assignedTo}</td>
-                  {/* <td className="p-2">{complaint.rating.toFixed(1)}</td> */}
-                  {complaint.rating !== null ? complaint.rating.toFixed(1) : "-"}
-                  <td className="p-2">{complaint.comment}</td>
-                  <td className="p-2">{complaint.openedAt}</td>
-                  <td className="p-2">{complaint.closedAt || "-"}</td>
+              {paginatedData.length === 0 ? (
+                <tr>
+                  <td className="p-4 text-center text-gray-500" colSpan={7}>
+                    No closed complaints match your filters.
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                paginatedData.map((complaint, idx) => (
+                  <tr key={idx} className="border-t border-gray-200">
+                    <td className="p-2">{complaint.complaintId}</td>
+                    <td className="p-2">{complaint.facility}</td>
+                    <td className="p-2">{complaint.assignedTo}</td>
+                    <td className="p-2">
+                      {complaint.rating > 0 ? complaint.rating.toFixed(1) : "-"}
+                    </td>
+                    <td
+                      className="p-2 truncate max-w-[200px]"
+                      title={complaint.comment}
+                    >
+                      {complaint.comment}
+                    </td>
+                    <td className="p-2">{complaint.openedAt}</td>
+                    <td className="p-2">{complaint.closedAt || "-"}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-gray-500">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
+            entries
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="p-1 rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-sm font-medium text-gray-700">
+              Page {currentPage} of {Math.max(1, totalPages)}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="p-1 rounded-md border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
