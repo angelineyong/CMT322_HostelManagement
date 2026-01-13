@@ -9,7 +9,6 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { staffPerformanceData, studentComplaints } from "../../data/mockData";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
